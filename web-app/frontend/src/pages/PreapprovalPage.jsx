@@ -239,17 +239,46 @@ export default function PreapprovalPage() {
     };
   }, [form]);
 
-  // Score the three examples once, for the badges on their cards.
+  // Score the three examples for the badges on their cards. One at a time, and only
+  // after the live estimate has had a head start: on a small host the four requests
+  // would otherwise fight over the CPU and the number people are actually watching
+  // arrives last. Scores are remembered for the session so coming back to this page
+  // doesn't repeat the work.
   useEffect(() => {
+    const cacheKey = "preset-scores";
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(cacheKey) || "null");
+      if (cached && Object.keys(PRESETS).every((k) => cached[k])) {
+        setPresetScores(cached);
+        return undefined;
+      }
+    } catch {
+      /* no cache: score them */
+    }
     const abort = new AbortController();
-    Object.keys(PRESETS).forEach((name) => {
-      predict(buildPayload({ ...DEFAULT_FORM, ...PRESETS[name] }), abort.signal)
-        .then((r) => setPresetScores((sc) => ({ ...sc, [name]: r })))
-        // null = tried and failed (API offline): show no badge rather than a
-        // placeholder that never resolves
-        .catch((e) => e.name !== "AbortError" && setPresetScores((sc) => ({ ...sc, [name]: null })));
-    });
-    return () => abort.abort();
+    const timer = setTimeout(async () => {
+      const scores = {};
+      for (const name of Object.keys(PRESETS)) {
+        try {
+          scores[name] = await predict(buildPayload({ ...DEFAULT_FORM, ...PRESETS[name] }), abort.signal);
+        } catch (e) {
+          if (e.name === "AbortError") return;
+          scores[name] = null; // tried and failed (API offline): no badge, no endless placeholder
+        }
+        setPresetScores({ ...scores });
+      }
+      if (Object.values(scores).every(Boolean)) {
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify(scores));
+        } catch {
+          /* fine without */
+        }
+      }
+    }, 900);
+    return () => {
+      clearTimeout(timer);
+      abort.abort();
+    };
   }, []);
 
   // Editing a field clears its own error straight away; the rest wait for the next submit.
