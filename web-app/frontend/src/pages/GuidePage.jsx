@@ -4,7 +4,7 @@ import { Kicker, PageTitle, PageSubtitle } from "../components/PageHeader.jsx";
 import Markdown from "../components/Markdown.jsx";
 import { Tooltip } from "../components/Tooltip.jsx";
 import { askGuideStream } from "../lib/api.js";
-import { Seedling } from "../components/icons.jsx";
+import { BotIcon } from "../components/icons.jsx";
 
 const STARTERS = [
   "What did this project actually find?",
@@ -42,10 +42,10 @@ const save = (messages) => {
 
 /* ------------------------------------------------------------------ small parts */
 
-function Mark({ className = "h-7 w-7", icon = "h-5 w-5" }) {
+function Mark({ className = "h-7 w-7", icon = "h-[18px] w-[18px]" }) {
   return (
-    <div className={`flex shrink-0 items-center justify-center rounded-full border border-border bg-card shadow-sm ${className}`}>
-      <Seedling className={icon} />
+    <div className={`flex shrink-0 items-center justify-center rounded-full bg-accent text-[var(--card)] ${className}`}>
+      <BotIcon className={icon} />
     </div>
   );
 }
@@ -388,7 +388,7 @@ export default function GuidePage() {
         <div ref={scrollRef} onScroll={onScroll} className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-5 sm:px-5">
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center animate-fade-in">
-              <Mark className="h-11 w-11" icon="h-8 w-8" />
+              <Mark className="h-12 w-12" icon="h-7 w-7" />
               <div className="mt-3 text-[1.02rem] font-semibold text-ink-primary">Ask about the research</div>
               <p className="mt-1 max-w-sm text-center text-[0.82rem] leading-relaxed text-ink-muted">
                 The methodology, the numbers, the negative results, what the preapproval
