@@ -1,5 +1,7 @@
-# Raw data (2.5 GB of Kaggle CSVs) and everything derived from it that can be rebuilt
-Data/
+# Raw data (2.5 GB of Kaggle CSVs) and everything derived from it that can be rebuilt.
+# Anchored to the root: an unanchored 'Data/' also matched web-app/frontend/public/data/
+# (git ignores case on macOS), which hid the site's findings JSON from the repo.
+/Data/
 Modeling/utilities/cache/
 Modeling/ARCHIVED/
 Modeling/models/superseded/
