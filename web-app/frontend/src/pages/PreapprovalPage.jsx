@@ -24,6 +24,7 @@ import {
   SCORE_MAX,
   extToScore,
   scoreToExt,
+  LIMITS,
 } from "../lib/constants.js";
 
 const TABS = [
@@ -101,35 +102,51 @@ const FIELD_LABEL = {
 
 const isNum = (v) => typeof v === "number" && Number.isFinite(v);
 const isInt = (v) => isNum(v) && Number.isInteger(v);
+const usd = (v) => `$${Math.round(v).toLocaleString()}`;
 
-// The same limits Modeling/api/schema.py enforces (income/credit/annuity > 0, age 18-99,
-// children >= 0, household >= 1, years employed >= 0, goods price > 0 if given), checked
-// here so the message can name the field in plain words rather than surfacing as a 422.
+// Keeps the form inside the range the model was trained on (see LIMITS in constants.js
+// for where the numbers come from) and refuses combinations no real application has.
+// The API applies looser sanity limits of its own; these are tighter and explain
+// themselves, because outside this range the model just repeats its nearest answer.
 function validate(form, employedUnknown) {
   const errors = {};
-  const positive = (key, what) => {
-    if (!isNum(form[key])) errors[key] = `Enter ${what}.`;
-    else if (form[key] <= 0) errors[key] = `${FIELD_LABEL[key]} must be more than $0.`;
+  const within = (key, what, fmt = usd, unit = "") => {
+    const v = form[key];
+    const { min, max } = LIMITS[key];
+    if (!isNum(v)) errors[key] = `Enter ${what}.`;
+    else if (v < min || v > max) errors[key] = `${FIELD_LABEL[key]} must be between ${fmt(min)} and ${fmt(max)}${unit}.`;
   };
-  positive("income", "a monthly income");
-  positive("annuity", "a monthly payment");
-  positive("creditAmount", "an amount to borrow");
+  const whole = (key, what) => {
+    const v = form[key];
+    const { min, max } = LIMITS[key];
+    if (!isInt(v) || v < min || v > max) errors[key] = `${what} must be a whole number from ${min} to ${max}.`;
+  };
 
+  within("income", "a monthly income");
+  within("annuity", "a monthly payment");
+  within("creditAmount", "an amount to borrow");
   // optional: blank or 0 means "no item", anything else has to be a real price
-  if (form.goodsPrice !== "" && form.goodsPrice !== 0) {
-    if (!isNum(form.goodsPrice) || form.goodsPrice < 0) errors.goodsPrice = "Enter a price, or leave at 0 for a cash loan.";
+  if (form.goodsPrice !== "" && form.goodsPrice !== 0) within("goodsPrice", "a price");
+
+  within("ageYears", "an age", String, "");
+  whole("children", "Children");
+  whole("familyMembers", "Household");
+  if (!employedUnknown) within("yearsEmployed", "years at your current job (0 if you just started)", String, " years");
+
+  // the fields have to agree with each other, too
+  if (!errors.annuity && !errors.creditAmount) {
+    const share = form.annuity / form.creditAmount;
+    if (share > LIMITS.paymentShareOfLoan.max)
+      errors.annuity = `That's over ${LIMITS.paymentShareOfLoan.max * 100}% of the loan every month, so the loan would be repaid in under 8 months, shorter than anything in the data. For ${usd(form.creditAmount)} the most is about ${usd(form.creditAmount * LIMITS.paymentShareOfLoan.max)}.`;
+    else if (share < LIMITS.paymentShareOfLoan.min)
+      errors.annuity = `That's under ${LIMITS.paymentShareOfLoan.min * 100}% of the loan a month, so repaying would take well over a decade; the longest term in the data is 7 years. For ${usd(form.creditAmount)} it needs to be at least ${usd(form.creditAmount * LIMITS.paymentShareOfLoan.min)}.`;
   }
-
-  if (!isNum(form.ageYears)) errors.ageYears = "Enter an age.";
-  else if (form.ageYears < 18 || form.ageYears > 99) errors.ageYears = "Age must be between 18 and 99.";
-
-  if (!isInt(form.children) || form.children < 0) errors.children = "Children must be a whole number, 0 or more.";
-  if (!isInt(form.familyMembers) || form.familyMembers < 1) errors.familyMembers = "Household must be a whole number, at least 1.";
-
-  if (!employedUnknown) {
-    if (!isNum(form.yearsEmployed)) errors.yearsEmployed = "Enter years at your current job (0 if you just started).";
-    else if (form.yearsEmployed < 0) errors.yearsEmployed = "Years at current job can't be negative.";
-  }
+  if (!errors.annuity && !errors.income && form.annuity > LIMITS.paymentShareOfIncome.max * form.income)
+    errors.annuity = `The payment is more than ${LIMITS.paymentShareOfIncome.max}x the monthly income. Nobody in the data paid more than about three quarters of theirs.`;
+  if (!errors.children && !errors.familyMembers && form.familyMembers < form.children + 1)
+    errors.familyMembers = `The household has to include you and all ${form.children} children, so at least ${form.children + 1}.`;
+  if (!employedUnknown && !errors.yearsEmployed && !errors.ageYears && form.yearsEmployed > form.ageYears - LIMITS.workingAgeFrom)
+    errors.yearsEmployed = `At ${form.ageYears}, years in the job can be at most ${form.ageYears - LIMITS.workingAgeFrom}.`;
   return errors;
 }
 
@@ -427,13 +444,17 @@ export default function PreapprovalPage() {
               rate set so the typical applicant earns $4,300 a month. That rate is a
               calibration constant, not a real exchange rate. For scale, the typical
               applicant borrows about $15,000, roughly 3.3 months of income paid back over
-              20 months.
+              20 months. The form keeps to the range the model was trained on (incomes of
+              about {usd(LIMITS.income.min)} to {usd(LIMITS.income.max)} a month, loans up to{" "}
+              {usd(LIMITS.creditAmount.max)}). Outside it the model can't tell applicants
+              apart, so it would only repeat its nearest answer.
             </p>
             <div className="stagger grid grid-cols-1 gap-4 sm:grid-cols-2">
               <NumberField
                 label="Monthly income before tax"
                 prefix="$"
-                min={0}
+                min={LIMITS.income.min}
+                max={LIMITS.income.max}
                 value={form.income}
                 onChange={set("income")}
                 error={fieldErrors.income}
@@ -442,7 +463,8 @@ export default function PreapprovalPage() {
               <NumberField
                 label="Monthly payment"
                 prefix="$"
-                min={0}
+                min={LIMITS.annuity.min}
+                max={LIMITS.annuity.max}
                 value={form.annuity}
                 onChange={set("annuity")}
                 error={fieldErrors.annuity}
@@ -451,7 +473,8 @@ export default function PreapprovalPage() {
               <NumberField
                 label="Amount you want to borrow"
                 prefix="$"
-                min={0}
+                min={LIMITS.creditAmount.min}
+                max={LIMITS.creditAmount.max}
                 value={form.creditAmount}
                 onChange={set("creditAmount")}
                 error={fieldErrors.creditAmount}
@@ -472,12 +495,13 @@ export default function PreapprovalPage() {
 
         {tab === 1 ? (
           <div className="stagger grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <NumberField label="Age" min={18} value={form.ageYears} onChange={set("ageYears")} error={fieldErrors.ageYears} />
+            <NumberField label="Age" min={LIMITS.ageYears.min} max={LIMITS.ageYears.max} value={form.ageYears} onChange={set("ageYears")} error={fieldErrors.ageYears} />
             <SelectField label="Gender" value={form.gender} onChange={set("gender")} options={["F", "M"]} />
-            <NumberField label="Children" min={0} value={form.children} onChange={set("children")} error={fieldErrors.children} />
+            <NumberField label="Children" min={0} max={LIMITS.children.max} value={form.children} onChange={set("children")} error={fieldErrors.children} />
             <NumberField
               label="People in household"
               min={1}
+              max={LIMITS.familyMembers.max}
               value={form.familyMembers}
               onChange={set("familyMembers")}
               error={fieldErrors.familyMembers}
@@ -512,6 +536,7 @@ export default function PreapprovalPage() {
             <NumberField
               label="Years at your current job"
               min={0}
+              max={LIMITS.yearsEmployed.max}
               value={form.yearsEmployed}
               onChange={set("yearsEmployed")}
               disabled={employedUnknown}

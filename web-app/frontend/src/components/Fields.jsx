@@ -38,7 +38,7 @@ const inputBase =
 // increment, so `step={100}` rejected any income that wasn't a round hundred -- including
 // the site's own presets -- with a native "nearest valid values are…" popup. Range checks
 // live in PreapprovalPage's validate() so the message can say what's actually wrong.
-export function NumberField({ label, help, error, value, onChange, min, prefix, suffix, disabled, placeholder }) {
+export function NumberField({ label, help, error, value, onChange, min, max, prefix, suffix, disabled, placeholder }) {
   return (
     <Field label={label} help={help} error={error}>
       <div className="relative">
@@ -56,6 +56,7 @@ export function NumberField({ label, help, error, value, onChange, min, prefix, 
           aria-invalid={error ? true : undefined}
           value={value}
           min={min}
+          max={max}
           placeholder={placeholder}
           disabled={disabled}
           onChange={(e) => onChange(e.target.value === "" ? "" : Number(e.target.value))}

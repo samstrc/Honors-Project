@@ -34,8 +34,9 @@ function describeError(body, status) {
   if (Array.isArray(detail)) {
     const lines = detail.map((d) => {
       const field = Array.isArray(d.loc) ? d.loc[d.loc.length - 1] : null;
-      const label = API_FIELD_LABELS[field] || field;
-      return label ? `${label}: ${d.msg}` : d.msg;
+      const label = API_FIELD_LABELS[field];
+      const msg = String(d.msg || "").replace(/^Value error, /, "");
+      return label ? `${label}: ${msg}` : msg;
     });
     return `The model API rejected the request. ${lines.join(" · ")}`;
   }
