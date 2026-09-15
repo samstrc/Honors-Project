@@ -468,7 +468,7 @@ export default function PreapprovalPage() {
                 value={form.annuity}
                 onChange={set("annuity")}
                 error={fieldErrors.annuity}
-                help="What you would pay each month. Across prior loans, monthly payment × number of payments comes to about 1.26x the amount borrowed. The rest is interest."
+                help="What you would pay each month. The model reads this mostly as the payment's share of the loan, which is really the term: mid-length terms (a payment around 5% of the loan, about 20 months) carry the most risk in the data, and short or long ones less. Across prior loans, payment × number of payments comes to about 1.26x the amount borrowed; the rest is interest."
               />
               <NumberField
                 label="Amount you want to borrow"
@@ -531,7 +531,7 @@ export default function PreapprovalPage() {
               value={form.incomeType}
               onChange={set("incomeType")}
               options={INCOME_TYPE_OPTIONS}
-              help="'Commercial associate' = employed in the private sector. 'State servant' = government employee."
+              help="'Commercial associate' = employed in the private sector. 'State servant' = government employee. Nearly everyone in the data is one of the first four; Unemployed (22 applicants of 307,511), Student (18), Businessman (10) and Maternity leave (5) were too rare for the model to learn anything specific, so for those it leans on the other fields."
             />
             <NumberField
               label="Years at your current job"
@@ -607,7 +607,7 @@ export default function PreapprovalPage() {
                   value={form.ccUtilization}
                   onChange={set("ccUtilization")}
                   format={(v) => `${Math.round(v * 100)}%`}
-                  help="Balance divided by limit. Above 100% means over the limit, which does happen in the data."
+                  help="Balance divided by limit. Above 100% means over the limit, which does happen in the data. Be aware this moves the estimate by well under a point: the model's card signals come from months of statements, which one number can't stand in for."
                 />
               </div>
             ) : null}
