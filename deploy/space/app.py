@@ -94,7 +94,7 @@ app.mount("/guide", guide_main.app)
 app.mount("/assets", StaticFiles(directory=os.path.join(DIST, "assets")), name="assets")
 
 
-@app.get("/{path:path}", include_in_schema=False)
+@app.api_route("/{path:path}", methods=["GET", "HEAD"], include_in_schema=False)
 def spa(path: str):
     """Static file if one exists, otherwise the app shell: the page does its own routing."""
     candidate = os.path.normpath(os.path.join(DIST, path))
