@@ -1,0 +1,11 @@
+# Pinned to the versions in the honorsproject conda env, so the container scores the
+# same joblib file the same way the notebook does.
+fastapi==0.141.1
+uvicorn==0.52.3
+pydantic==2.13.4
+joblib==1.5.3
+numpy==2.4.6
+pandas==2.3.3
+scipy==1.18.0
+scikit-learn==1.9.0
+lightgbm==4.7.0

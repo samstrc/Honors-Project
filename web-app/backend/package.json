@@ -1,0 +1,16 @@
+{
+  "name": "preapproval-backend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Thin Express server: proxies POST /api/predict to the FastAPI model service and POST /api/chat to the guide-service, so the browser only ever talks to one origin. No model-scoring or chatbot logic lives here -- see ../guide-service/main.py and Modeling/api/main.py.",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  }
+}

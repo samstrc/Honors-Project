@@ -1,0 +1,19 @@
+{
+  "cv_auc": 0.7954886469319374,
+  "test_auc": 0.7955138006300928,
+  "name": "A8xgb_tuned_rank1",
+  "params": {
+    "max_depth": 5,
+    "min_child_weight": 122.4490967775761,
+    "subsample": 0.8090315524934398,
+    "colsample_bytree": 0.4930013555555631,
+    "colsample_bylevel": 0.4443637591458257,
+    "reg_alpha": 2.5788278764181913,
+    "reg_lambda": 1.229389241210599,
+    "gamma": 0.0004491708563757859,
+    "max_bin": 256,
+    "learning_rate": 0.02,
+    "n_estimators": 6000,
+    "early_stopping_rounds": 150
+  }
+}

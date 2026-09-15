@@ -1,0 +1,12 @@
+# Pinned to the versions in the honorsproject conda env. The Chroma index in Chatbot/db
+# was written by this chromadb version, so keep them in step.
+fastapi==0.141.1
+uvicorn==0.52.3
+pydantic==2.13.4
+python-dotenv==1.2.2
+openai==3.3.1
+tiktoken==0.14.0
+chromadb==1.5.9
+langchain-core==1.6.0
+langchain-openai==1.6.0
+langchain-chroma==1.1.0

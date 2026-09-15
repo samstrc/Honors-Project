@@ -1,0 +1,27 @@
+{
+  "cv_auc": 0.7963213784826493,
+  "test_auc": 0.7968048301604163,
+  "name": "A7_tuned_rank1",
+  "params": {
+    "num_leaves": 29,
+    "max_depth": 4,
+    "min_child_samples": 186,
+    "min_child_weight": 0.005507701567456598,
+    "subsample": 0.875813279996544,
+    "colsample_bytree": 0.10815086756183348,
+    "reg_alpha": 0.0025572160914309507,
+    "reg_lambda": 11.776016821953908,
+    "max_bin": 255,
+    "cat_smooth": 50,
+    "subsample_freq": 1,
+    "learning_rate": 0.012,
+    "n_estimators": 20000
+  },
+  "best_iters": [
+    4641,
+    4660,
+    6201,
+    4571,
+    4641
+  ]
+}

@@ -1,0 +1,30 @@
+# Raw data (2.5 GB of Kaggle CSVs) and everything derived from it that can be rebuilt
+Data/
+Modeling/utilities/cache/
+Modeling/ARCHIVED/
+Modeling/models/superseded/
+Modeling/.git-old-lendingclub/
+
+# Paperwork and drafts stay local
+Documents/
+Chatbot/docs/
+
+# Secrets: OPENAI_API_KEY etc. live in Modeling/.env and are never committed
+.env
+.env.*
+!.env.example
+
+# Generated
+node_modules/
+dist/
+build/
+__pycache__/
+*.pyc
+deploy/hf-space/
+*.log
+.DS_Store
+.streamlit/secrets.toml
+
+# Personal
+FullSizeRender_VSCO.jpeg
+.Rhistory

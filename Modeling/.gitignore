@@ -1,0 +1,5 @@
+.env
+mlflow.db
+mlruns/
+# the served model files are part of the project; only old experiments stay out
+models/superseded/
