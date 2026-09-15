@@ -85,6 +85,21 @@ export const Seedling = (p) => (
   </svg>
 );
 
+/** The research guide's face: a small, friendly robot. The head takes currentColor; the
+ *  eyes and smile take `eyes`, so it can sit on any background. */
+export const BotIcon = ({ eyes = "var(--accent)", ...p }) => (
+  <svg viewBox="0 0 24 24" fill="none" {...p}>
+    <path d="M12 6V4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <circle cx="12" cy="2.9" r="1.4" fill="currentColor" />
+    <rect x="4.5" y="6.2" width="15" height="12.3" rx="4.2" fill="currentColor" />
+    <rect x="2.2" y="10.6" width="2.3" height="3.6" rx="1.15" fill="currentColor" />
+    <rect x="19.5" y="10.6" width="2.3" height="3.6" rx="1.15" fill="currentColor" />
+    <rect x="8.3" y="10" width="2.2" height="3.8" rx="1.1" fill={eyes} />
+    <rect x="13.5" y="10" width="2.2" height="3.8" rx="1.1" fill={eyes} />
+    <path d="M9.6 15.6c.7.9 1.5 1.3 2.4 1.3s1.7-.4 2.4-1.3" stroke={eyes} strokeWidth="1.3" strokeLinecap="round" />
+  </svg>
+);
+
 /* ----- financed goods ----- */
 
 const PhoneIcon = (p) => (
