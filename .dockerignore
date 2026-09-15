@@ -1,0 +1,25 @@
+# What the images need is small: the model API's code + artefacts, the chatbot's code +
+# index, and the web app. Everything below is build-time or research material.
+Data/
+Documents/
+Streamlit Website/
+Modeling/ARCHIVED/
+Modeling/utilities/cache/
+Modeling/utilities/results/
+Modeling/models/superseded/
+Modeling/home_credit_default_risk.ipynb
+Chatbot/docs/
+
+# never bake secrets or local state into an image
+**/.env
+**/.env.*
+!**/.env.example
+
+# generated / local
+**/node_modules/
+**/dist/
+**/__pycache__/
+**/*.pyc
+**/.DS_Store
+*.jpeg
+*.md

@@ -1,0 +1,212 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Earth palette, ported from Streamlit Website/theme.py. Both light and dark modes were
+  validated there against contrast + colour-blindness checks, so the values are carried
+  over verbatim rather than re-picked.
+*/
+:root {
+  --surface: #f2ede6;
+  --card: #fbf8f3;
+  --ink-primary: #2e2a24;
+  --ink-secondary: #575044;
+  --ink-muted: #847b6d;
+  --border: rgba(46, 42, 36, 0.13);
+  --gridline: #ded4c5;
+  --cat-1: #4d975e;
+  --cat-2: #925612;
+  --cat-3: #2f5b98;
+  --cat-4: #a87f04;
+  --cat-5: #8f2f2e;
+  --good: #4d975e;
+  --critical: #8f2f2e;
+  --pos: #8f2f2e;
+  --neg: #4d975e;
+  --accent: #925612;
+  color-scheme: light;
+}
+
+html.dark {
+  --surface: #1e1b17;
+  --card: #272319;
+  --ink-primary: #f4efe6;
+  --ink-secondary: #c8c0b1;
+  --ink-muted: #8d8477;
+  --border: rgba(244, 239, 230, 0.13);
+  --gridline: #3a352d;
+  --cat-1: #4d975e;
+  --cat-2: #985c1c;
+  --cat-3: #3e6aa7;
+  --cat-4: #a87f08;
+  --cat-5: #a14f4b;
+  --good: #4d975e;
+  --critical: #a14f4b;
+  --pos: #a14f4b;
+  --neg: #4d975e;
+  --accent: #985c1c;
+  color-scheme: dark;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html,
+body {
+  background: var(--surface);
+  color: var(--ink-primary);
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-variant-numeric: proportional-nums;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* Custom, understated scrollbar so the earth palette holds up even here. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-muted);
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--card) 0%,
+    color-mix(in srgb, var(--card) 40%, var(--ink-muted) 12%) 50%,
+    var(--card) 100%
+  );
+  background-size: 800px 100%;
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Form controls -------------------------------------------------------------- */
+
+/* Text inputs: the border colour change gets a soft glow with it. */
+.field-input {
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease, opacity 300ms ease;
+}
+.field-input:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+/* Keyframes referenced from these plain-CSS rules must be defined here: Tailwind only
+   emits keyframes for animate-* utilities it finds in the markup. */
+@keyframes field-in {
+  0% { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes step-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* A form step fades in as a whole; the fields inside it (.stagger) then rise one after
+   another. No horizontal motion -- it fought the height glide and looked busy. */
+.step-in {
+  animation: step-in 0.28s ease both;
+}
+.stagger > * {
+  animation: field-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger > *:nth-child(1) { animation-delay: 30ms; }
+.stagger > *:nth-child(2) { animation-delay: 70ms; }
+.stagger > *:nth-child(3) { animation-delay: 110ms; }
+.stagger > *:nth-child(4) { animation-delay: 150ms; }
+.stagger > *:nth-child(5) { animation-delay: 190ms; }
+.stagger > *:nth-child(6) { animation-delay: 230ms; }
+.stagger > *:nth-child(7) { animation-delay: 270ms; }
+.stagger > *:nth-child(8) { animation-delay: 310ms; }
+
+/* Range sliders: filled track up to the thumb (--pct is set inline), thumb that grows
+   under the pointer. Styled per engine because range inputs can't be styled otherwise. */
+.slider {
+  --pct: 50%;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--accent) var(--pct), var(--gridline) var(--pct));
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  transition: opacity 300ms ease;
+}
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 18px;
+  width: 18px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 2px solid var(--accent);
+  box-shadow: 0 1px 3px rgba(30, 27, 23, 0.25);
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 160ms ease;
+}
+.slider::-moz-range-thumb {
+  height: 18px;
+  width: 18px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 2px solid var(--accent);
+  box-shadow: 0 1px 3px rgba(30, 27, 23, 0.25);
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 160ms ease;
+}
+.slider:hover::-webkit-slider-thumb,
+.slider:focus-visible::-webkit-slider-thumb {
+  transform: scale(1.18);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.slider:active::-webkit-slider-thumb {
+  transform: scale(1.28);
+}
+.slider:hover::-moz-range-thumb,
+.slider:focus-visible::-moz-range-thumb {
+  transform: scale(1.18);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.slider:active::-moz-range-thumb {
+  transform: scale(1.28);
+}
+.slider:focus-visible {
+  outline: none;
+}
+
+/* Checkbox tick draws itself in. */
+.tick {
+  stroke-dasharray: 14;
+  stroke-dashoffset: 14;
+  transition: stroke-dashoffset 220ms cubic-bezier(0.16, 1, 0.3, 1) 60ms;
+}
+.tick.on {
+  stroke-dashoffset: 0;
+}
+
+/* Anyone who has asked their OS for less motion gets it. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

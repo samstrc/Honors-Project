@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+*.log
+.DS_Store
+backend/.cache/
+
+# guide-service/ is a Python process; ignore its bytecode cache the same way
+# node_modules/ is ignored above.
+__pycache__/
+*.pyc

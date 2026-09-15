@@ -1,0 +1,6 @@
+[theme]
+primaryColor = "#2a5b8c"
+font = "sans serif"
+
+[client]
+toolbarMode = "minimal"

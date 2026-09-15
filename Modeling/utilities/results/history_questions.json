@@ -1,0 +1,78 @@
+{
+  "curve": [
+    {
+      "k": 0,
+      "auc": 0.7625997366178636
+    },
+    {
+      "k": 3,
+      "auc": 0.7701974133418248
+    },
+    {
+      "k": 5,
+      "auc": 0.7725609058054133
+    },
+    {
+      "k": 10,
+      "auc": 0.7750735007799348
+    },
+    {
+      "k": 15,
+      "auc": 0.777993860164224
+    },
+    {
+      "k": 25,
+      "auc": 0.7807713299390728
+    },
+    {
+      "k": 50,
+      "auc": 0.7847695921078767
+    },
+    {
+      "k": 100,
+      "auc": 0.7908621685081738
+    },
+    {
+      "k": 200,
+      "auc": 0.7935488707846697
+    },
+    {
+      "k": 502,
+      "auc": 0.7969982316564751
+    }
+  ],
+  "full_auc": 0.7969982316564751,
+  "top_aggregates": [
+    "INS_2Y_DPD_MEAN",
+    "PREV_DAYS_LAST_DUE_1ST_VERSION_MAX",
+    "BURO_ACTIVE_BUREAU_DEBT_CREDIT_RATIO_MAX",
+    "CC_RECENT_UTILIZATION_MAX",
+    "BURO_BUREAU_DEBT_CREDIT_RATIO_MAX",
+    "BURO_BUREAU_DEBT_CREDIT_RATIO_VAR",
+    "PREV_CREDIT_GOODS_RATIO_MEAN",
+    "INS_AMT_PAYMENT_SUM",
+    "INS_IS_LATE_MEAN",
+    "BURO_BUREAU_DEBT_CREDIT_RATIO_MEAN",
+    "PREV_DUE_DIFF_VAR",
+    "POS_INSTALMENT_PAID_RATIO_MEAN",
+    "INS_2Y_DPD_MAX",
+    "BURO_ACTIVE_BUREAU_DEBT_CREDIT_RATIO_MEAN",
+    "PREV_NAME_CONTRACT_STATUS_REFUSED_MEAN",
+    "INS_2Y_IS_LATE_MEAN",
+    "INS_DPD_TREND",
+    "PREV_DAYS_LAST_DUE_MAX",
+    "CC_CNT_DRAWINGS_ATM_CURRENT_MEAN",
+    "INS_AMT_PAYMENT_MEAN",
+    "PREV_CNT_PAYMENT_VAR",
+    "BURO_ACTIVE_DAYS_CREDIT_MAX",
+    "BURO_ACTIVE_BUREAU_CREDIT_DURATION_MIN",
+    "PREV_APPROVED_CNT_PAYMENT_VAR",
+    "INS_DBD_SUM"
+  ],
+  "askable_in_top25": [
+    "INS_2Y_DPD_MEAN",
+    "CC_RECENT_UTILIZATION_MAX",
+    "INS_IS_LATE_MEAN",
+    "INS_2Y_IS_LATE_MEAN"
+  ]
+}
