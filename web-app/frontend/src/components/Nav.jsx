@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { Seedling } from "./icons.jsx";
 
 const LINKS = [
   { to: "/", label: "What the data says", icon: InsightsIcon },
@@ -92,8 +93,8 @@ export default function Nav() {
     <header className="sticky top-0 z-40 border-b border-border bg-surface/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3.5 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent text-[13px] font-bold text-[var(--card)]">
-            •
+          <div className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card shadow-sm">
+            <Seedling className="h-[22px] w-[22px]" />
           </div>
           {/* The header is capped at max-w-6xl, and four labelled tabs + the toggle leave
               room for a short wordmark only. Tab labels wait for md, the wordmark for lg. */}

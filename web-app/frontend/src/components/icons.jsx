@@ -72,6 +72,19 @@ export const AlertIcon = (p) => (
   </svg>
 );
 
+/** The site's mark: the seedling from the favicon (public/favicon.svg), minus its tile, so
+ *  the element around it decides the background. */
+export const Seedling = (p) => (
+  <svg viewBox="12 14 40 46" {...p}>
+    <path d="M32 40 C32 34 32 30 32 24" stroke="#4d975e" strokeWidth="3.2" strokeLinecap="round" fill="none" />
+    <ellipse cx="24.5" cy="27" rx="8.5" ry="4.8" fill="#4d975e" transform="rotate(-34 24.5 27)" />
+    <ellipse cx="39.5" cy="21" rx="8.5" ry="4.8" fill="#5fae70" transform="rotate(34 39.5 21)" />
+    <ellipse cx="32" cy="40" rx="14" ry="3.2" fill="#6b3d0c" />
+    <path d="M19.5 41.5 L44.5 41.5 L41.5 57 Q41.2 59 39.2 59 L24.8 59 Q22.8 59 22.5 57 Z" fill="#925612" />
+    <rect x="17" y="37" width="30" height="6" rx="3" fill="#b5722a" />
+  </svg>
+);
+
 /* ----- financed goods ----- */
 
 const PhoneIcon = (p) => (
