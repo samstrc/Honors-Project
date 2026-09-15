@@ -230,7 +230,7 @@ with st.form("application_form"):
         col1, col2 = st.columns(2)
         with col1:
             income = st.number_input(
-                "Monthly income before tax ($)", min_value=0.0, value=4300.0, step=100.0,
+                "Monthly income before tax ($)", min_value=1000.0, max_value=25000.0, value=4300.0, step=100.0,
                 key="income",
                 help="Gross monthly income, before tax and deductions. The dataset states "
                      "neither the period nor whether income is gross or net. The period is "
@@ -240,19 +240,19 @@ with st.form("application_form"):
                      "result by about 0.2 percentage points.",
             )
             credit_amount = st.number_input(
-                "Amount you want to borrow ($)", min_value=0.0, value=15000.0, step=500.0,
+                "Amount you want to borrow ($)", min_value=1500.0, max_value=120000.0, value=15000.0, step=500.0,
                 key="credit_amount",
                 help="The loan principal, before interest.",
             )
         with col2:
             annuity = st.number_input(
-                "Monthly payment ($)", min_value=0.0, value=730.0, step=25.0, key="annuity",
+                "Monthly payment ($)", min_value=100.0, max_value=7500.0, value=730.0, step=25.0, key="annuity",
                 help="What you would pay each month. The dataset calls this the 'annuity'. "
                      "Across prior loans, monthly payment x number of payments comes to about "
                      "1.26x the amount borrowed -- the rest is interest.",
             )
             goods_price = st.number_input(
-                "Price of the item being bought ($, optional)", min_value=0.0, value=13150.0,
+                "Price of the item being bought ($, optional)", min_value=0.0, max_value=120000.0, value=13150.0,
                 step=500.0, key="goods_price",
                 help="For a purchase loan -- a car or appliance, say. Leave at 0 for a cash loan "
                      "with nothing attached to it.",
@@ -261,12 +261,12 @@ with st.form("application_form"):
     with tab_applicant:
         col1, col2, col3 = st.columns(3)
         with col1:
-            age_years = st.number_input("Age", min_value=18, max_value=99, value=35, key="age_years")
+            age_years = st.number_input("Age", min_value=18, max_value=75, value=35, key="age_years")
             gender = st.selectbox("Gender", ["F", "M"], key="gender")
         with col2:
-            children = st.number_input("Children", min_value=0, value=0, key="children")
+            children = st.number_input("Children", min_value=0, max_value=12, value=0, key="children")
             family_members = st.number_input(
-                "People in household", min_value=1, value=1, key="family_members",
+                "People in household", min_value=1, max_value=15, value=1, key="family_members",
                 help="Everyone living in the home, including you and any children.",
             )
         with col3:
@@ -314,7 +314,7 @@ with st.form("application_form"):
         with col2:
             employed_unknown = income_type in ("Unemployed", "Pensioner", "Student")
             years_employed = st.number_input(
-                "Years at your current job", min_value=0.0, value=0.0 if employed_unknown else 5.0,
+                "Years at your current job", min_value=0.0, max_value=50.0, value=0.0 if employed_unknown else 5.0,
                 step=0.5, disabled=employed_unknown, key="years_employed",
                 help="Disabled automatically for unemployed, retired, or student applicants.",
             )
