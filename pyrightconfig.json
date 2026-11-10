@@ -1,0 +1,7 @@
+// Pylance / pyright settings. The backend and the scripts import modeling/features.py and
+// backend/app through sys.path, which a type checker can't follow, so extraPaths says
+// where to look. How strict the checking is stays with your editor setting.
+{
+  "extraPaths": ["modeling", "backend"],
+  "exclude": ["**/node_modules", "**/__pycache__", "**/.*", "frontend", "data", "documents"]
+}

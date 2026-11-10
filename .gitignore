@@ -1,16 +1,14 @@
 # Raw data (2.5 GB of Kaggle CSVs) and everything derived from it that can be rebuilt.
-# Anchored to the root: an unanchored 'Data/' also matched web-app/frontend/public/data/
-# (git ignores case on macOS), which hid the site's findings JSON from the repo.
-/Data/
-Modeling/utilities/cache/
-Modeling/ARCHIVED/
-Modeling/models/superseded/
+# Anchored to the root so it can't also match frontend/public/data/.
+/data/
+modeling/cache/
+modeling/models/superseded/
 
-# Paperwork and drafts stay local
-Documents/
-Chatbot/docs/
+# documents/rag/ (what the guide indexes) and documents/other/ (personal paperwork)
+# stay local
+/documents/
 
-# Secrets: OPENAI_API_KEY etc. live in Modeling/.env and are never committed
+# Secrets: OPENAI_API_KEY lives in backend/.env and is never committed
 .env
 .env.*
 !.env.example
@@ -21,11 +19,15 @@ dist/
 build/
 __pycache__/
 *.pyc
-deploy/hf-space/
+.venv/
 *.log
 .DS_Store
-.streamlit/secrets.toml
 
 # Personal
-FullSizeRender_VSCO.jpeg
 .Rhistory
+
+# Claude's generated chart previews
+claude_scripts/charts/
+
+# Pre-cleanup copies of the notebooks, safe to delete
+claude_scripts/notebooks_before_cleanup.zip
