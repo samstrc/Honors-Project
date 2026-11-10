@@ -1,8 +1,8 @@
 """
 Retrieval-augmented chat: a guide to this research project.
 
-Two ways in: `python chat.py` for a terminal session, or `from chat import Guide` for
-the Streamlit page in `Streamlit Website/guide_page.py`.
+Two ways in: `python -m app.guide.chat` (from backend/) for a terminal session, or
+`Guide` from this module, which `service.py` serves to the site's guide page.
 
 Three design choices, each of which matters more than the prompt wording.
 
@@ -21,14 +21,18 @@ claim stays traceable, so the retrieved sections are returned alongside the text
 from __future__ import annotations
 
 import os
-import sys
-import textwrap
+from collections.abc import Iterator
+from typing import TYPE_CHECKING, Any, cast
 
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from openai import OpenAI
+from pydantic import SecretStr
 
-from config import CHAT_MODEL, DB_DIR, EMBED_MODEL, TOP_K, get_api_key
+from .config import CHAT_MODEL, DB_DIR, EMBED_MODEL, TOP_K, get_api_key
+
+if TYPE_CHECKING:
+    from openai.types.chat import ChatCompletionMessageParam
 
 SYSTEM_PROMPT = """\
 You are the guide to Sam Strickler's undergraduate honors research project on the Home \
@@ -95,13 +99,13 @@ class Guide:
     def __init__(self, k: int = TOP_K, rel_floor: float = 0.62):
         if not os.path.isdir(DB_DIR):
             raise SystemExit(
-                f"No vector store at {DB_DIR}.\nRun `python ingest.py` first."
+                f"No vector store at {DB_DIR}.\nRun `python -m app.guide.ingest` from backend/ first."
             )
         key = get_api_key()
         self.client = OpenAI(api_key=key)
         self.db = Chroma(
             persist_directory=DB_DIR,
-            embedding_function=OpenAIEmbeddings(model=EMBED_MODEL, api_key=key),
+            embedding_function=OpenAIEmbeddings(model=EMBED_MODEL, api_key=SecretStr(key)),
             collection_metadata={"hnsw:space": "cosine"},
         )
         self.k = k
@@ -143,11 +147,7 @@ class Guide:
 
     # ------------------------------------------------------------------
     def _compose(self, question: str, history: list[dict], hits):
-        """Turn retrieved hits into the chat messages and the sources list.
-
-        Shared by `answer` and `answer_stream` so the prompt, the context layout and the
-        source records are built in exactly one place.
-        """
+        """Turn retrieved hits into the chat messages and the sources list."""
         blocks, sources = [], []
         for rank, (doc, score) in enumerate(hits, 1):
             src = doc.metadata.get("source", "?")
@@ -170,30 +170,16 @@ class Guide:
         })
         return messages, sources
 
-    def answer(self, question: str, history: list[dict] | None = None):
-        """Return (answer_text, sources). `history` is a list of {role, content}."""
-        history = history or []
-        search_query = self._standalone(question, history)
-        hits = self.retrieve(search_query)
-        messages, sources = self._compose(question, history, hits)
-
-        r = self.client.chat.completions.create(
-            model=CHAT_MODEL, messages=messages, temperature=0.2,
-        )
-        return (r.choices[0].message.content or "").strip(), sources
-
-    def answer_stream(self, question: str, history: list[dict] | None = None):
-        """Same pipeline as `answer`, as a generator of progress events.
+    def answer_stream(self, question: str, history: list[dict] | None = None) -> Iterator[dict[str, Any]]:
+        """Answer a question, as a generator of progress events. `history` is a list of
+        {role, content}.
 
         Yields dicts a UI can render as they happen, so the wait is not a blank one:
 
             {"type": "status",  "stage": "condense" | "retrieve" | "write"}
-            {"type": "sources", "sources": [...]}      # same records `answer` returns
+            {"type": "sources", "sources": [...]}      # the passages the answer draws on
             {"type": "delta",   "text": "..."}         # a chunk of the answer
             {"type": "done",    "text": "..."}         # the full answer, once
-
-        The condense call, the retrieval and the prompt are the exact same code paths as
-        `answer`; only the final completion is streamed.
         """
         history = history or []
         if history:
@@ -207,7 +193,8 @@ class Guide:
 
         yield {"type": "status", "stage": "write"}
         stream = self.client.chat.completions.create(
-            model=CHAT_MODEL, messages=messages, temperature=0.2, stream=True,
+            model=CHAT_MODEL, messages=cast("list[ChatCompletionMessageParam]", messages),
+            temperature=0.2, stream=True,
         )
         parts = []
         for chunk in stream:
@@ -232,21 +219,21 @@ def main():
             break
         if not q:
             break
+        text, sources = "", []
         try:
-            text, sources = guide.answer(q, history)
+            print()
+            for event in guide.answer_stream(q, history):
+                if event["type"] == "delta":
+                    print(event["text"], end="", flush=True)
+                elif event["type"] == "sources":
+                    sources = event["sources"]
+                elif event["type"] == "done":
+                    text = event["text"]
         except Exception as e:
-            print(f"  ! {type(e).__name__}: {e}\n")
+            print(f"\n  ! {type(e).__name__}: {e}\n")
             continue
-        print()
-        for line in text.split("\n"):
-            print(textwrap.fill(line, 88) if line.strip() else "")
-        seen, shown = set(), []
-        for s in sources:
-            label = f"{s['source']} -- {s['section']}"
-            if label not in seen:
-                seen.add(label)
-                shown.append(label)
-        print("\n  sources: " + "; ".join(shown[:4]) + "\n")
+        labels = dict.fromkeys(f"{s['source']} -- {s['section']}" for s in sources)
+        print("\n\n  sources: " + "; ".join(list(labels)[:4]) + "\n")
         history += [{"role": "user", "content": q}, {"role": "assistant", "content": text}]
 
 

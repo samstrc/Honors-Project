@@ -2,10 +2,10 @@
 Chunk the corpus, embed it, and persist a Chroma vector store.
 
 Run this once to build the index, then again whenever the project changes or a new
-document lands in `Chatbot/docs/`. Adding the research paper is just that: drop the PDF
+document lands in `documents/rag/`. Adding the research paper is just that: drop the PDF
 in and re-run.
 
-    python ingest.py
+    cd backend && python -m app.guide.ingest
 
 Two choices behind the settings below.
 
@@ -27,9 +27,10 @@ import shutil
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from pydantic import SecretStr
 
-from config import DB_DIR, EMBED_MODEL, get_api_key
-from corpus import build_corpus
+from .config import DB_DIR, EMBED_MODEL, get_api_key
+from .corpus import build_corpus
 
 CHUNK_SIZE = 1400
 CHUNK_OVERLAP = 180
@@ -70,7 +71,7 @@ def main():
     os.makedirs(DB_DIR, exist_ok=True)
 
     print("embedding and persisting...")
-    embeddings = OpenAIEmbeddings(model=EMBED_MODEL, api_key=get_api_key())
+    embeddings = OpenAIEmbeddings(model=EMBED_MODEL, api_key=SecretStr(get_api_key()))
     Chroma.from_documents(
         documents=chunks,
         embedding=embeddings,

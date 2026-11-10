@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import os
-import sys
+
+from ..paths import BACKEND_DIR
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.join(HERE, "..")
 DB_DIR = os.path.join(HERE, "db", "chroma")
-DOCS_DIR = os.path.join(HERE, "docs")
 
 EMBED_MODEL = "text-embedding-3-small"
 CHAT_MODEL = "gpt-4.1-mini"
@@ -23,8 +22,8 @@ TOP_K = 6
 def get_api_key() -> str:
     """Resolve the OpenAI key without ever putting it in a source file.
 
-    Order: the environment, then `Modeling/.env`, then `Chatbot/.env`. Both env files are
-    gitignored, so the key never reaches the repository.
+    Order: the environment, then `backend/.env`, which is gitignored, so the key never
+    reaches the repository.
     """
     if os.environ.get("OPENAI_API_KEY"):
         return os.environ["OPENAI_API_KEY"]
@@ -32,8 +31,7 @@ def get_api_key() -> str:
     try:
         from dotenv import load_dotenv
 
-        load_dotenv(os.path.join(ROOT, "Modeling", ".env"))
-        load_dotenv(os.path.join(HERE, ".env"))
+        load_dotenv(os.path.join(BACKEND_DIR, ".env"))
     except ImportError:
         pass
     if os.environ.get("OPENAI_API_KEY"):
@@ -41,6 +39,6 @@ def get_api_key() -> str:
 
     raise SystemExit(
         "No OpenAI API key found.\n"
-        "  Set OPENAI_API_KEY in your environment, or add a line to Modeling/.env:\n"
+        "  Set OPENAI_API_KEY in your environment, or add a line to backend/.env:\n"
         "      OPENAI_API_KEY=sk-...\n"
     )

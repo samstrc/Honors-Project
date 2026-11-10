@@ -9,14 +9,13 @@ dropped before it reaches the splitter.
 
 Sources, roughly in order of how often they answer a question:
 
-  1. Markdown cells from `home_credit_default_risk.ipynb` -- the written narrative of all
-     three parts, already prose and already sectioned by heading.
-  2. `utilities/results/*.json|csv` -- the numbers, rendered as readable tables rather
+  1. Markdown cells from the three notebooks in `modeling/` -- the written narrative, already prose and already sectioned by heading.
+  2. `modeling/results/*.json|csv` -- the numbers, rendered as readable tables rather
      than raw JSON, so a retrieved chunk reads like a results section.
-  3. Module docstrings from `utilities/*.py` and `api/*.py` -- these carry the reasoning
+  3. Module docstrings from `modeling/features.py` and `backend/app/model/*.py` -- these carry the reasoning
      behind each decision, which is most of what the guide gets asked about.
   4. A hand-written project overview -- the framing no single file states outright.
-  5. Anything dropped in `Chatbot/docs/` (.pdf, .md, .txt), which is where the research
+  5. Anything dropped in `documents/rag/` (.pdf, .md, .txt), which is where the research
      paper goes once it exists. Nothing else needs to change to pick it up.
 """
 
@@ -29,12 +28,13 @@ import re
 
 from langchain_core.documents import Document
 
+from ..paths import MODEL_NAME
+from ..paths import MODELING_DIR as MODELING
+from ..paths import MODELS_DIR
+from ..paths import RAG_DOCS_DIR as DOCS
+from ..paths import RESULTS_DIR as RESULTS
+
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.join(HERE, "..")
-MODELING = os.path.join(ROOT, "Modeling")
-UTILS = os.path.join(MODELING, "utilities")
-RESULTS = os.path.join(UTILS, "results")
-DOCS = os.path.join(HERE, "docs")
 
 
 # ----------------------------------------------------------------------------------
@@ -55,11 +55,12 @@ Default Risk dataset from Kaggle.
 It does two things: builds a model that predicts whether a loan applicant will fail to
 repay, and serves that prediction through a preapproval tool someone can actually use.
 
-The work has three parts. Part 1 is the original modelling notebook, which reached 0.7786
-test AUC. Part 2 re-runs the problem as a controlled ablation and reaches 0.7976. Part 3
-is the runnable build that produces the deployed model, which a FastAPI service and a
-Streamlit site use to score an application, explain it, and place it against the
-population of real applicants.
+The notebook has four sections. It explores the data, then fits a first round of models,
+which reached 0.7786 test AUC. It then re-runs the problem as a controlled study, one
+change at a time, and reaches 0.7976 with the applicant's full credit history. The last
+part asks what a preapproval form can honestly deliver: it trains a model on the form's
+fields alone, without sex or marital status, which a FastAPI backend and a React site use
+to score an application, explain it, and place it against the population of real applicants.
 
 The main finding is not the score. Two changes account for about 88% of the improvement,
 fixing a bug in early stopping and building better features, while hyperparameter search,
@@ -74,9 +75,10 @@ multipurpose cash loans, and revolving credit, and the data bears that out.
 
 Contract types in `application_train` are Cash loans 90.5% and Revolving loans 9.5%; there
 is no mortgage category. The largest product portfolio in `previous_application` is POS
-(point-of-sale) at 41.4%. What was financed: mobile phones 13.5%, consumer electronics
-7.3%, computers 6.3%, audio/video 6.0%, furniture 3.2%. The originating retailers are
-consumer electronics shops (23.8%) and phone shops (16.5%). Cash loans are for repairs
+(point-of-sale) at 53.2% of applications with a recorded portfolio. Of the loans that
+financed goods: mobile phones 31.2%, consumer electronics 16.9%, computers 14.7%,
+audio/video 13.8%, furniture 7.5%. The originating retailers are consumer electronics shops
+(48.9%) and phone shops (33.9%). Cash loans are for repairs
 (34.1%), urgent needs (12.1%), a used car (4.1%), medicine (3.1%).
 
 The median loan term is 12 months: 36 at the 90th percentile, 84 at the longest. A
@@ -86,7 +88,7 @@ Home Credit's business targets customers with thin or no credit files, which is 
 dataset ships three external bureau scores and five tables of alternative history. That
 population is also where the model is weakest: on the 14.2% of test clients with no bureau
 record at all it scores 0.780 AUC, against 0.799 on clients who have a record, even though
-the thin-file group defaults more often (10.2% vs 8.1%). The people this lender exists to
+the thin-file group defaults more often (10.2% vs 7.7%). The people this lender exists to
 serve are the ones it predicts least well.
 """),
         ("What TARGET actually means", """
@@ -122,7 +124,7 @@ The default rate is 8.07%, so the problem is heavily imbalanced: a model that pr
 `AMT_INCOME_TOTAL` is monthly income, and `AMT_ANNUITY` is a monthly payment.
 Neither is documented, but the arithmetic settles both. Annuity times the payment count
 comes to about 1.26x the principal, which only works if the annuity is per-month. And the
-median annuity of 24,903 against a median income of 146,997 is 16.9% of income if income
+median annuity of 24,903 against a median income of 147,150 is 16.9% of income if income
 is monthly, versus an impossible 203% of monthly income if it is annual. So the median
 applicant borrows about 3.3 months of income over roughly 20 payments: ordinary
 consumer credit, not the enormous loan the raw figure suggests.
@@ -146,8 +148,8 @@ features are dimensionless ratios in which the unit cancels.
         ("Headline results", """
 | stage | test AUC |
 |---|---|
-| Part 1, best model (CatBoost) | 0.7786 |
-| Part 2, final blend | 0.7976 |
+| first models, best (CatBoost) | 0.7786 |
+| after the controlled study, final blend | 0.7976 |
 
 The stated target was 0.80 and it was not reached. The shortfall of 0.0024 is smaller
 than the test set's own standard error of 0.0039, so 0.7976 and 0.800 can't be told apart
@@ -156,7 +158,7 @@ on this data. The honest figure to report is still 0.7976.
 Where the gain came from, as test-AUC deltas against the best rung so far: better
 features (+0.0110), fixing early stopping (+0.0080), letting LightGBM handle missing
 values natively (+0.0010), hyperparameter search (+0.0009), cohort features (+0.0005),
-and ensembling (+0.0003). Those sum to +0.0217, the whole gain from the Part 1
+and ensembling (+0.0003). Those sum to +0.0217, the whole gain from the first-model
 reproduction to the final blend.
 """),
     ]
@@ -228,7 +230,7 @@ def ablation_results() -> list[Document]:
         res = json.load(f)
 
     labels = {
-        "B0_notebook_reproduction": "Part 1 pipeline, reproduced exactly",
+        "B0_notebook_reproduction": "first-model pipeline, reproduced exactly",
         "A1_native_nan": "dropped median imputation and StandardScaler; LightGBM routes NaN natively",
         "A2_native_categorical": "native categorical splits instead of one-hot encoding",
         "A3_early_stopping": "sized n_estimators by early stopping instead of a fixed 362",
@@ -272,7 +274,7 @@ def ablation_results() -> list[Document]:
                   f"{b['test_auc'] - b['best_single_test']:+.5f}."]
 
     return [Document(page_content="\n".join(lines),
-                     metadata={"source": "utilities/results/ablation.json", "kind": "results",
+                     metadata={"source": "results/ablation.json", "kind": "results",
                                "section": "Ablation ladder: measured results"})]
 
 
@@ -299,7 +301,7 @@ def feature_importances(top_n: int = 40) -> list[Document]:
               "statistics: averaging three noisy, partially-missing scores produces a cleaner",
               "signal than any one of them."]
     return [Document(page_content="\n".join(lines),
-                     metadata={"source": "utilities/results/importances.csv", "kind": "results",
+                     metadata={"source": "results/importances.csv", "kind": "results",
                                "section": "Most important features in the final model"})]
 
 
@@ -309,25 +311,41 @@ def deployment_notes() -> list[Document]:
 
     Added after a test question ("what threshold does the API use?") came back unanswered:
     the value lives in a model artefact and in function-level comments, neither of which
-    the corpus reached. Read from the saved JSON so the figures cannot drift away from
-    what is actually deployed.
+    the corpus reached. Every figure is read from a file the notebooks write (the model's
+    schema and threshold, results/final_metrics.json, results/fairness_and_form.json,
+    results/form_field_sensitivity.csv), so the guide cannot quote a number the deployed
+    model no longer has.
     """
-    models = os.path.join(MODELING, "models")
-    schema_p = os.path.join(models, "lightgbm_tuned_v2_schema.json")
-    thresh_p = os.path.join(models, "lightgbm_tuned_v2_threshold.json")
-    if not (os.path.exists(schema_p) and os.path.exists(thresh_p)):
+    def load(path):
+        return json.load(open(path)) if os.path.exists(path) else None
+
+    schema = load(os.path.join(MODELS_DIR, f"{MODEL_NAME}_schema.json"))
+    thresh = load(os.path.join(MODELS_DIR, f"{MODEL_NAME}_threshold.json"))
+    if not (schema and thresh):
         return []
-    schema = json.load(open(schema_p))
-    thresh = json.load(open(thresh_p))
+    final = load(os.path.join(RESULTS, "final_metrics.json")) or {}
+    fair = load(os.path.join(RESULTS, "fairness_and_form.json"))
+    medians = schema.get("ext_source_medians", {})
+    n_cohort = sum(c.startswith("COH_") for c in schema["features"])
 
     text = f"""
 # The deployed system
 
-The API (`api/main.py`, FastAPI) serves **{os.path.basename(schema_p).replace('_schema.json','')}**:
-a LightGBM model over {len(schema['features'])} features, test AUC
-{schema.get('test_auc', float('nan')):.4f} and average precision
-{schema.get('test_avg_precision', float('nan')):.4f}, fitted with
-{schema.get('n_estimators', 0):,} trees on the full training split.
+The API (`backend/app/model/service.py`, FastAPI) serves **{MODEL_NAME}**: a LightGBM model
+over {len(schema['features'])} features, every one of them something a preapproval form can
+supply, built by 03_train.ipynb. Test AUC {schema.get('test_auc', float('nan')):.4f}, average
+precision {schema.get('test_avg_precision', float('nan')):.4f}, {schema.get('n_estimators', 0):,}
+trees fitted on the full training split. It is trained without sex or marital status
+({', '.join(schema.get('excluded', []))}).
+
+That AUC assumes the applicant enters the three bureau scores. When they are left blank and
+the typical scores are filled in, test AUC is {schema.get('test_auc_scores_blank', float('nan')):.4f}
+(03_train.ipynb, section 7). Most people filling in the form won't know their scores, so
+that lower figure is the realistic one for the website.
+
+This is not the 0.7976 model of the research study. That one reads the applicant's whole
+credit history, which a preapproval form cannot supply; the served model is trained on the
+form's fields alone, which is what makes it honest about what a form can deliver.
 
 ## The decision threshold
 
@@ -335,45 +353,90 @@ The cutoff is **{thresh['threshold']:.4f}** -- above it an application is declin
 preapproved. It is the F1-optimal point computed on **out-of-fold predictions**, not on
 the test set: a deployment threshold is a decision, and the test split had already been
 spent on reporting. Using the test set to pick it would quietly turn the held-out set
-into a tuning set. The default 0.5 that Part 1 started with is arbitrary at an 8.07% base
+into a tuning set. The default 0.5 the first models started with is arbitrary at an 8.07% base
 rate.
+
+## Rules on top of the model
+
+Three behaviours of the raw model made no sense for a lending tool, so the API handles them
+outside the model:
+
+- **Affordability.** An application whose monthly payment is more than 40% of monthly
+  income is declined whatever its score. The model cannot enforce this itself: applicants
+  paying 40-50% of income missed early payments at 8.6%, barely above the 8.1% average,
+  because Home Credit had already turned away those who could not pay. 40% is a policy
+  line, not something learned. For scale, about 2.6% of the real applicants in the data
+  paid more than 40% of their income, and Home Credit had approved all of them.
+- **Blank bureau scores.** When the form gives none of the three scores, the API fills in
+  the training applicants' median scores ({', '.join(f'{v:.2f}' for v in medians.values())}),
+  so a typical applicant lands near the middle of the population. Without this, the model
+  would treat the applicant like the 0.06% of training applicants who had no score at all,
+  a rare and riskier group. A partly filled form keeps its gaps, since a missing score 1
+  was normal (56% of applicants).
+- **Unemployed applicants and students.** The form leaves their job length blank, and in
+  training a blank job length almost always meant a pensioner (55,352 of 55,374), a
+  low-risk group. So the model scores them as safer than employed applicants, although
+  the 22 unemployed applicants in the data missed payments 36% of the time. With 22
+  unemployed applicants and 18 students there is too little data to correct for, so the
+  score is shown with a warning that it is unreliable.
+
+## Better bureau scores can only lower the risk
+
+The model is trained with LightGBM monotone constraints on every feature that rises with the
+bureau scores (the scores, their mean, minimum, maximum, weighted sum and product, the
+score-by-age and score-by-employment interactions, and the applicant's score relative to
+their cohort), so raising any score can never raise the prediction. The spread between the
+three scores was dropped from the model because it moves both ways as one score changes: left
+in, three identical scores (a spread of exactly zero, rare in the data but easy on a slider)
+raised the risk by up to 2 points. The constraint cost nothing measurable in AUC
+(03_train.ipynb, section 3).
 
 ## No calibration wrapper
 
-Part 1 needed `CalibratedClassifierCV` with isotonic regression because `scale_pos_weight`
+The first models needed `CalibratedClassifierCV` with isotonic regression because `scale_pos_weight`
 inflated raw probabilities roughly threefold. The ablation showed that reweighting bought
-no AUC at all -- it only distorted the probability scale -- so the tuned configuration
-drops it. Mean predicted probability is 7.95% against a true base rate of 8.07%, straight
-out of the model, with nothing applied afterwards.
+no AUC at all -- it only distorted the probability scale -- so it was dropped. The served
+model predicts {final.get('mean_predicted', float('nan')):.2%} on average against a true base
+rate of {final.get('base_rate', float('nan')):.2%}, straight out of the model.
+"""
+    if fair:
+        m = fair["models"]
+        full, form = m["baseline"], m["form-only, without sex and marital status"]["true form"]
+        prot = m["without sex and marital status"]["full history"]
+        text += f"""
+## Why the site serves a form-only model
 
-## What the API can and cannot see
+Measured in 02_research.ipynb, section 3. The full-history model scores
+{full['full history']['auc']:.4f} with everything in front of it. Fed only what a fully
+answered preapproval form supplies, it drops to {full['true form']['auc']:.4f}, and its
+probabilities run too high: {full['true form']['mean_predicted']:.1%} predicted on average
+against {full['true form']['base_rate']:.1%} actual. (An earlier estimate of
+{full['history blanked']['auc']:.3f} blanked only the credit-history tables, and so still
+scored application columns no form asks for.) A
+model trained on the form's fields alone scores {form['auc']:.4f} on the same inputs, with
+{form['mean_predicted']:.1%} predicted on average: better ranking and honest probabilities.
 
-The model was trained on application data joined to aggregates of each client's credit
-history. A prospective applicant has no such history to join, so about 600 of the 693
-features arrive missing. LightGBM routes missing values natively and saw plenty of them in
-training, but the measured cost is real:
+## Sex and marital status
 
-| scenario | test AUC |
-|---|---|
-| everything available, as trained | 0.79695 |
-| auxiliary aggregates blanked, which is what the API sees today | 0.75989 |
-| aggregates and cohort features both blanked | 0.74399 |
-
-The 693 features split into 98 application-level, 515 auxiliary-table and 80 cohort. The
-API rebuilds the 80 cohort features from lookup tables exported alongside the model, which
-lifts the deployed figure from 0.744 to 0.760. The credit-history aggregates stay missing,
-since no lookup can supply a history the applicant has not got.
-
-Asking the applicant to self-report that history was measured too, and it does not pay.
-Revealing the three most important history features buys +0.0076, fifteen of them +0.0154,
-and it takes 100 before the score reaches 0.791. Only 4 of the top 25 aggregates are
-things a person could answer at all; the rest are statistical summaries over loan-level
-records nobody can report from memory.
-
-The model is also weakest exactly where the lender operates. On the 8,755 test clients
-with no bureau record (14.2%) it scores 0.780, against 0.799 on clients who have one,
-while that group defaults more often (10.2% vs 8.1%).
-
+The US Equal Credit Opportunity Act and its Regulation B bar sex and marital status from
+credit decisions, so the served model is trained without them, and without the cohort
+features built on sex. On the full-history model, leaving them out cost
+{full['full history']['auc'] - prot['auc']:.4f} AUC, about half the test set's standard
+error, and changed {fair['decisions_changed_by_dropping_protected']:.1%} of approve/decline
+decisions. It does not erase the difference in outcomes: without either input the model
+still approved men at {prot['approval_by_gender']['ratio_M_to_F']:.2f} times the rate of
+women, because other features carry some of the same signal. 03_train.ipynb, section 9,
+reports the same check for the served model.
+"""
+    sens_p = os.path.join(RESULTS, "form_field_sensitivity.csv")
+    levers = ""
+    if os.path.exists(sens_p):
+        import csv
+        rows = list(csv.DictReader(open(sens_p)))
+        top = [f"{r['form field']} ({float(r['largest move (points)']):.1f})" for r in rows[:7]]
+        levers = ("The fields that move a typical applicant's predicted risk most, in percentage "
+                  "points (03_train.ipynb, section 11): " + ", ".join(top) + ".")
+    text += f"""
 ## The form
 
 The form collects amounts in US dollars and converts them before scoring. The dataset's
@@ -381,61 +444,44 @@ currency is anonymised, so there is no exchange rate to look up; the constant is
 dataset's median applicant income (147,150 a month) maps onto $4,300 a month, which places
 someone entering dollars where an equivalent Home Credit applicant sits in the population.
 It is a calibration constant, not an exchange rate, and the page says so. The conversion is
-necessary because 80 of the model's features compare an applicant's income against their
+necessary because {n_cohort} of the model's features compare an applicant against their
 cohort's average, which only means anything if the applicant is on the same scale as the
-training data. The exact anchor is not load-bearing: moving it from $3,000 to $6,670 a month
-shifts a typical applicant by 0.26 percentage points. Entering dollars unconverted, off by a
-factor of 34, shifts them by 2.2 points. Income is asked for as gross, monthly, before tax;
-the dataset states neither, and entering net instead moves a typical result by about 0.2
-percentage points.
+training data. Income is asked for as gross, monthly, before tax; the dataset states neither.
 
-Living situation, contract type, car ownership and realty ownership were removed from the
-form after a sensitivity sweep (`utilities/api_limits.py`) showed each changed none of
-the model's inputs. The strongest levers are the three external bureau scores, worth up to
-5.0, 4.4 and 3.3 percentage points of predicted risk on their own, then the monthly payment
-(2.8), family status (2.6), the amount borrowed (1.9) and the price of the item financed
-(1.5). Stated income moves the prediction by only 0.22 percentage points: what matters is
-the loan relative to income, not its absolute size.
+It asks nothing the model cannot use, and nothing a lender may not use: no sex, no marital
+status, and no living situation, contract type, car or realty ownership, none of which the
+model reads. {levers}
 """
     return [Document(page_content=text.strip(),
-                     metadata={"source": "api/main.py + model artefacts",
+                     metadata={"source": "backend/app/model/service.py + model artefacts",
                                "kind": "deployment", "section": "The deployed system"})]
 
 
 # ----------------------------------------------------------------------------------
 def module_docstrings() -> list[Document]:
-    """Module-level docstrings from the pipeline and the API.
+    """Module-level docstrings from the feature code and the served model.
 
     These carry the reasoning behind each methodological choice -- which is what a guide
     gets asked about far more often than the code itself.
     """
+    model_dir = os.path.join(HERE, "..", "model")
+    sources = [("modeling", os.path.join(MODELING, "features.py"))] + [
+        ("model", os.path.join(model_dir, fn)) for fn in sorted(os.listdir(model_dir))
+        if fn.endswith(".py") and not fn.startswith("_")]
     docs = []
-    targets = [(UTILS, "utilities"), (os.path.join(MODELING, "api"), "api")]
-    for folder, label in targets:
-        if not os.path.isdir(folder):
+    for label, path in sources:
+        doc = ast.get_docstring(ast.parse(open(path).read()))
+        if not doc or len(doc) < 150:
             continue
-        for fn in sorted(os.listdir(folder)):
-            if not fn.endswith(".py") or fn.startswith("_"):
-                continue
-            path = os.path.join(folder, fn)
-            try:
-                mod = ast.parse(open(path).read())
-            except SyntaxError:
-                continue
-            doc = ast.get_docstring(mod)
-            if not doc or len(doc) < 150:
-                continue
-            docs.append(Document(
-                page_content=f"# {label}/{fn}\n\n{doc.strip()}",
-                metadata={"source": f"{label}/{fn}", "kind": "code-doc",
-                          "section": f"{label}/{fn}"},
-            ))
+        name = f"{label}/{os.path.basename(path)}"
+        docs.append(Document(page_content=f"# {name}\n\n{doc.strip()}",
+                             metadata={"source": name, "kind": "code-doc", "section": name}))
     return docs
 
 
 # ----------------------------------------------------------------------------------
 def dropped_in_docs() -> list[Document]:
-    """Whatever the user puts in Chatbot/docs/ -- the research paper's future home."""
+    """Whatever the user puts in documents/rag/ -- the research paper's future home."""
     if not os.path.isdir(DOCS):
         return []
     out = []
@@ -463,12 +509,13 @@ def dropped_in_docs() -> list[Document]:
 def build_corpus(verbose: bool = True) -> list[Document]:
     groups = {
         "overview": project_overview(),
-        "notebook": notebook_sections(os.path.join(MODELING, "home_credit_default_risk.ipynb")),
+        "notebooks": [d for name in ("01_eda", "02_research", "03_train")
+                      for d in notebook_sections(os.path.join(MODELING, f"{name}.ipynb"))],
         "ablation results": ablation_results(),
         "feature importances": feature_importances(),
         "deployment": deployment_notes(),
         "module docstrings": module_docstrings(),
-        "docs/ drop-ins": dropped_in_docs(),
+        "documents/rag": dropped_in_docs(),
     }
     docs = []
     for name, group in groups.items():
