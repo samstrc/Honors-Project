@@ -1,0 +1,342 @@
+@import "@fontsource-variable/schibsted-grotesk";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Earth palette. Both light and dark modes were validated against contrast and
+  colour-blindness checks, so change these values with care.
+
+  The fills (--good, --critical, --accent, --cat-*) are for bars, dots and marks. Text in
+  a status colour uses the *-text variant, which clears 4.5:1 on both surfaces.
+*/
+:root {
+  --surface: #f2ede6;
+  --card: #fbf8f3;
+  --ink-primary: #2e2a24;
+  --ink-secondary: #575044;
+  --ink-muted: #71685b;
+  --border: rgba(46, 42, 36, 0.13);
+  --rule: rgba(46, 42, 36, 0.22);
+  --gridline: #ded4c5;
+  --cat-1: #4d975e;
+  --cat-2: #925612;
+  --cat-3: #2f5b98;
+  --cat-4: #a87f04;
+  --cat-5: #8f2f2e;
+  --good: #4d975e;
+  --critical: #8f2f2e;
+  --pos: #8f2f2e;
+  --neg: #4d975e;
+  --accent: #925612;
+  --good-text: #3a744a;
+  --critical-text: #8f2f2e;
+  --accent-text: #925612;
+  --focus: #925612;
+  /* bars in the findings charts: one neutral ink, red only where the rate is above average */
+  --bar: #a39785;
+  color-scheme: light;
+}
+
+html.dark {
+  --surface: #1e1b17;
+  --card: #272319;
+  --ink-primary: #f4efe6;
+  --ink-secondary: #c8c0b1;
+  --ink-muted: #9a9184;
+  --border: rgba(244, 239, 230, 0.13);
+  --rule: rgba(244, 239, 230, 0.22);
+  --gridline: #3a352d;
+  --cat-1: #4d975e;
+  --cat-2: #985c1c;
+  --cat-3: #3e6aa7;
+  --cat-4: #a87f08;
+  --cat-5: #a14f4b;
+  --good: #4d975e;
+  --critical: #a14f4b;
+  --pos: #a14f4b;
+  --neg: #4d975e;
+  --accent: #985c1c;
+  --good-text: #6fb07f;
+  --critical-text: #cf8a83;
+  --accent-text: #c48a4a;
+  --focus: #c48a4a;
+  --bar: #6c6457;
+  color-scheme: dark;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html,
+body {
+  background: var(--surface);
+  color: var(--ink-primary);
+}
+
+body {
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "ss01" 0;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* The phone nav can scroll sideways, but shouldn't draw a scrollbar while doing it. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Every interactive element gets the same visible focus ring from the keyboard. */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.focus-ring:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-muted);
+}
+
+/* Type -------------------------------------------------------------------------
+   Hierarchy comes from weight and colour more than size: headings are ink-primary at
+   650, body is ink-secondary at 400, and the gap between them is what reads. */
+@layer components {
+  .t-h1 {
+    font-size: 1.75rem;
+    line-height: 1.15;
+    font-weight: 680;
+    letter-spacing: -0.018em;
+    color: var(--ink-primary);
+    text-wrap: balance;
+  }
+  .t-h2 {
+    font-size: 1.25rem;
+    line-height: 1.3;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    color: var(--ink-primary);
+    text-wrap: balance;
+  }
+  .t-h3 {
+    font-size: 1rem;
+    line-height: 1.4;
+    font-weight: 620;
+    color: var(--ink-primary);
+  }
+  .t-lead {
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    color: var(--ink-secondary);
+    max-width: 62ch;
+    text-wrap: pretty;
+  }
+  .t-body {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--ink-secondary);
+    text-wrap: pretty;
+  }
+  .t-small {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--ink-muted);
+  }
+  /* Schibsted's tabular figures are very wide, so figures stay proportional; columns
+     that must line up are right-aligned instead. */
+  .t-num {
+    font-variant-numeric: lining-nums proportional-nums;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+
+  .link {
+    color: var(--ink-primary);
+    font-weight: 560;
+    text-decoration: underline;
+    text-decoration-color: var(--rule);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
+    transition: text-decoration-color 150ms ease;
+  }
+  .link:hover {
+    text-decoration-color: currentColor;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 6px;
+    padding: 0.55rem 1rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.3;
+    transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--card);
+  }
+  .btn-primary:hover {
+    background: color-mix(in srgb, var(--accent) 88%, var(--ink-primary));
+  }
+  .btn-secondary {
+    border: 1px solid var(--rule);
+    color: var(--ink-primary);
+  }
+  .btn-secondary:hover {
+    border-color: var(--ink-muted);
+  }
+
+  /* A section opens with a thin rule instead of sitting in a box. */
+  .section-rule {
+    border-top: 1px solid var(--rule);
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--gridline) 0%,
+    color-mix(in srgb, var(--gridline) 50%, var(--surface)) 50%,
+    var(--gridline) 100%
+  );
+  background-size: 800px 100%;
+}
+
+/* Form controls -------------------------------------------------------------- */
+
+@layer components {
+/* Inputs are an underline, not a box: the form reads as one sheet. The line is
+   ink-muted (4.7:1) so the field edge is still clear, and focus thickens it in the
+   accent colour on top of the standard focus ring. */
+.field-input {
+  width: 100%;
+  border: 0;
+  border-bottom: 1.5px solid var(--ink-muted);
+  border-radius: 0;
+  background: transparent;
+  padding: 0.4rem 0 0.45rem;
+  font-size: 1rem;
+  color: var(--ink-primary);
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease, opacity 300ms ease;
+}
+.field-input:hover {
+  border-bottom-color: var(--ink-secondary);
+}
+.field-input:focus {
+  border-bottom-color: var(--accent);
+  box-shadow: 0 1.5px 0 0 var(--accent);
+}
+.field-input:focus-visible {
+  outline: none;
+}
+.field-input[aria-invalid="true"] {
+  border-bottom-color: var(--critical);
+}
+.field-input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+select.field-input {
+  appearance: none;
+  padding-right: 1.5rem;
+  background-repeat: no-repeat;
+  background-size: 14px;
+  background-position: right 0 center;
+  cursor: pointer;
+}
+select.field-input option {
+  background: var(--card);
+  color: var(--ink-primary);
+}
+}
+
+
+/* Range sliders: filled track up to the thumb (--pct is set inline). Styled per engine
+   because range inputs can't be styled otherwise. */
+.slider {
+  --pct: 50%;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--accent) var(--pct), var(--gridline) var(--pct));
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 18px;
+  width: 18px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 2px solid var(--accent);
+  transition: transform 140ms ease;
+}
+.slider::-moz-range-thumb {
+  height: 18px;
+  width: 18px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 2px solid var(--accent);
+  transition: transform 140ms ease;
+}
+.slider:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+.slider:active::-moz-range-thumb {
+  transform: scale(1.15);
+}
+.slider:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 6px;
+}
+
+/* Checkbox tick draws itself in. */
+.tick {
+  stroke-dasharray: 14;
+  stroke-dashoffset: 14;
+  transition: stroke-dashoffset 200ms ease 40ms;
+}
+.tick.on {
+  stroke-dashoffset: 0;
+}
+
+/* Anyone who has asked their OS for less motion gets it. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}
