@@ -1,4 +1,4 @@
-# Render blueprint: the whole site as one free web service built from deploy/Dockerfile.
+# Render blueprint: the whole site as one free web service built from the root Dockerfile.
 # In the Render dashboard: New -> Blueprint -> pick this repo -> Apply. It will ask for
 # OPENAI_API_KEY (marked sync: false below, so the value never lives in this file).
 services:
@@ -6,7 +6,7 @@ services:
     name: preapproval
     runtime: docker
     plan: free
-    dockerfilePath: ./deploy/Dockerfile
+    dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /api/health
     autoDeploy: true
