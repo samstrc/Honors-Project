@@ -1,0 +1,17 @@
+{
+  "params": {
+    "num_leaves": 27,
+    "max_depth": 7,
+    "min_child_samples": 163,
+    "min_child_weight": 4.276984131645106,
+    "subsample": 0.8358175088683427,
+    "colsample_bytree": 0.1727679519720861,
+    "reg_alpha": 1.67757843672504,
+    "reg_lambda": 0.004522443427164478,
+    "max_bin": 255,
+    "cat_smooth": 70,
+    "subsample_freq": 1,
+    "learning_rate": 0.012
+  },
+  "cv_auc": 0.7647425927856846
+}

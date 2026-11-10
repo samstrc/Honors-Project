@@ -1,36 +1,70 @@
 """
-Feature engineering for Home Credit Default Risk.
+Feature engineering, shared by the notebooks and the site's backend.
 
-Builds a wide feature matrix from application_train and all five auxiliary tables, then
-caches it to `cache/features.parquet`. It runs in under 4 GB of RAM: each auxiliary table
-is read with narrow dtypes, aggregated to one row per SK_ID_CURR, and freed before the
-next one is touched.
+The notebooks build the feature matrix with this module and decide everything about the
+model; the backend only imports `add_application_features` from it to turn a form into a
+model input. One definition for both means the site can't quietly compute a feature
+differently from how the model learned it.
 
-Two feature sets, so the ablation study can measure what the extra engineering is worth:
+`FORM_INPUTS` and `form_feature_columns` say which of the model's features a preapproval
+form can supply. 03_train.ipynb trains the served model on exactly those, minus the
+`PROTECTED` attributes.
 
-  * `--level base`  -- the aggregations the original notebook used (~40 aux features)
-  * `--level full`  -- deep aggregations + application-level ratios (~700 features)
+Built in two stages, each cached to `cache/` so later runs skip straight to training:
+
+  1. `build_full`: application-level ratios plus deep aggregations of the five auxiliary
+     tables (~1,480 columns). Each table is read with narrow dtypes, aggregated to one row
+     per applicant and freed before the next, so this runs in under 4 GB of RAM.
+  2. `build_extra`: features that need the full matrix first. Cohort statistics (an
+     income of 150,000 means something different for a labourer than for a manager) and
+     two-level installment aggregates ("the worst single prior loan").
 """
 
 from __future__ import annotations
 
-import argparse
 import gc
+import json
 import os
+import re
 import warnings
 
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DATA = os.path.join(HERE, "..", "..", "Data")
+DATA = os.path.join(HERE, "..", "data")
 CACHE = os.path.join(HERE, "cache")
+FULL_PATH = os.path.join(CACHE, "features_full.parquet")
+EXTRA_PATH = os.path.join(CACHE, "features_extra.parquet")
+SEED = 42
 
 # Aggregations applied to every numeric column of an auxiliary table.
 NUM_AGGS = ["min", "max", "mean", "sum", "var"]
+
+# The raw columns a preapproval applicant can answer about themselves: the application's
+# amounts, age, household, education, employment, the three bureau scores (optional) and
+# their credit card utilization (optional). Everything else in the data -- building and
+# region statistics, document flags, the bureau and prior-loan history -- is something a
+# lender looks up or never sees, so a form-only model cannot use it.
+# backend/app/model/schema.py is the form itself and maps its fields onto these columns.
+FORM_INPUTS = [
+    "AMT_INCOME_TOTAL", "AMT_CREDIT", "AMT_ANNUITY", "AMT_GOODS_PRICE",
+    "DAYS_BIRTH", "CNT_CHILDREN", "CNT_FAM_MEMBERS", "NAME_EDUCATION_TYPE",
+    "NAME_INCOME_TYPE", "OCCUPATION_TYPE", "ORGANIZATION_TYPE",
+    "DAYS_EMPLOYED", "DAYS_EMPLOYED_ANOM",
+    "EXT_SOURCE_1", "EXT_SOURCE_2", "EXT_SOURCE_3",
+    "CC_UTILIZATION_MEAN", "CC_COUNT",
+]
+
+# Sex and marital status. US fair-lending law (the Equal Credit Opportunity Act and its
+# Regulation B) bars using either in a credit decision, so the served model is trained
+# without them and without any feature built from them. 02_research.ipynb, section 3,
+# measures what that costs.
+PROTECTED = ["CODE_GENDER", "NAME_FAMILY_STATUS"]
 
 
 def _downcast(df: pd.DataFrame) -> pd.DataFrame:
@@ -60,7 +94,7 @@ def _flatten(df: pd.DataFrame, prefix: str) -> pd.DataFrame:
 # ----------------------------------------------------------------------------------
 # application_train
 # ----------------------------------------------------------------------------------
-def application(level: str) -> pd.DataFrame:
+def application() -> pd.DataFrame:
     df = pd.read_csv(os.path.join(DATA, "application_train.csv"))
     df = _downcast(df)
 
@@ -72,20 +106,17 @@ def application(level: str) -> pd.DataFrame:
     df["DAYS_EMPLOYED_ANOM"] = (df["DAYS_EMPLOYED"] == 365243).astype("int8")
     df["DAYS_EMPLOYED"] = df["DAYS_EMPLOYED"].replace(365243, np.nan)
 
-    if level == "full":
-        df = add_application_features(df)
-
-    return _downcast(df)
+    return _downcast(add_application_features(df))
 
 
 def add_application_features(df: pd.DataFrame) -> pd.DataFrame:
     """
     Derive the application-level features from the raw columns.
 
-    Split out from `application()` so the serving path (`api/main.py`) can build a
+    Split out from `application()` so the serving path (`backend/app/model/service.py`) can build a
     feature row with this code rather than a reimplementation. A second copy of these
     formulas would be free to drift from the one the model was trained on, and the
-    resulting skew is close to undetectable from the outside -- the API would just
+    resulting skew is close to undetectable from the outside -- the site would just
     quietly get worse.
 
     Operates on whatever columns are present; callers reindex to the model's schema
@@ -139,8 +170,7 @@ def add_application_features(df: pd.DataFrame) -> pd.DataFrame:
 
     # --- document flags: how many were supplied matters more than which ones ---
     doc_cols = [c for c in df.columns if c.startswith("FLAG_DOCUMENT_")]
-    df["DOCUMENT_COUNT"] = (df[doc_cols].sum(axis=1).astype("int8")
-                    if doc_cols else np.nan)
+    df["DOCUMENT_COUNT"] = df[doc_cols].sum(axis=1).astype("int8") if doc_cols else np.nan
     df["DOCUMENT_KURTOSIS"] = df[doc_cols].kurtosis(axis=1) if doc_cols else np.nan
 
     # --- credit bureau enquiry volume ---
@@ -157,47 +187,12 @@ def add_application_features(df: pd.DataFrame) -> pd.DataFrame:
 # ----------------------------------------------------------------------------------
 # bureau + bureau_balance
 # ----------------------------------------------------------------------------------
-def bureau_and_balance(level: str) -> pd.DataFrame:
+def bureau_and_balance() -> pd.DataFrame:
     bb = pd.read_csv(
         os.path.join(DATA, "bureau_balance.csv"),
         dtype={"SK_ID_BUREAU": "int32", "MONTHS_BALANCE": "int16", "STATUS": "category"},
     )
 
-    if level == "base":
-        bb["IS_DPD"] = bb["STATUS"].isin(["1", "2", "3", "4", "5"]).astype("int8")
-        bb_agg = bb.groupby("SK_ID_BUREAU").agg(
-            MONTHS_BALANCE_COUNT=("MONTHS_BALANCE", "size"),
-            DPD_STATUS_RATE=("IS_DPD", "mean"),
-        )
-        del bb
-        gc.collect()
-
-        bureau = _downcast(pd.read_csv(os.path.join(DATA, "bureau.csv")))
-        bureau = bureau.merge(bb_agg, on="SK_ID_BUREAU", how="left")
-        del bb_agg
-        gc.collect()
-        bureau["IS_ACTIVE"] = (bureau["CREDIT_ACTIVE"] == "Active").astype("int8")
-        bureau["DEBT_TO_CREDIT"] = bureau["AMT_CREDIT_SUM_DEBT"] / bureau["AMT_CREDIT_SUM"].replace(0, np.nan)
-        out = bureau.groupby("SK_ID_CURR").agg(
-            BUREAU_LOAN_COUNT=("SK_ID_BUREAU", "count"),
-            BUREAU_ACTIVE_RATIO=("IS_ACTIVE", "mean"),
-            BUREAU_DAYS_CREDIT_MEAN=("DAYS_CREDIT", "mean"),
-            BUREAU_CREDIT_SUM_MEAN=("AMT_CREDIT_SUM", "mean"),
-            BUREAU_CREDIT_SUM_DEBT_MEAN=("AMT_CREDIT_SUM_DEBT", "mean"),
-            BUREAU_CREDIT_OVERDUE_MEAN=("AMT_CREDIT_SUM_OVERDUE", "mean"),
-            BUREAU_DPD_STATUS_RATE_MEAN=("DPD_STATUS_RATE", "mean"),
-            BUREAU_CREDIT_MAX_OVERDUE_MEAN=("AMT_CREDIT_MAX_OVERDUE", "mean"),
-            BUREAU_CNT_PROLONGED_SUM=("CNT_CREDIT_PROLONG", "sum"),
-            BUREAU_DAYS_CREDIT_ENDDATE_MEAN=("DAYS_CREDIT_ENDDATE", "mean"),
-            BUREAU_CREDIT_SUM_LIMIT_MEAN=("AMT_CREDIT_SUM_LIMIT", "mean"),
-            BUREAU_DEBT_TO_CREDIT_MEAN=("DEBT_TO_CREDIT", "mean"),
-            BUREAU_CREDIT_TYPE_NUNIQUE=("CREDIT_TYPE", "nunique"),
-        )
-        del bureau
-        gc.collect()
-        return _downcast(out)
-
-    # --- full ---
     # Monthly repayment status per bureau loan. STATUS: C=closed, X=unknown, 0=current,
     # 1-5 = increasingly severe days-past-due buckets.
     bb["STATUS"] = bb["STATUS"].astype("object")
@@ -255,30 +250,9 @@ def bureau_and_balance(level: str) -> pd.DataFrame:
 # ----------------------------------------------------------------------------------
 # previous_application
 # ----------------------------------------------------------------------------------
-def previous_applications(level: str) -> pd.DataFrame:
+def previous_applications() -> pd.DataFrame:
     prev = _downcast(pd.read_csv(os.path.join(DATA, "previous_application.csv")))
 
-    if level == "base":
-        prev["IS_REFUSED"] = (prev["NAME_CONTRACT_STATUS"] == "Refused").astype("int8")
-        prev["IS_APPROVED"] = (prev["NAME_CONTRACT_STATUS"] == "Approved").astype("int8")
-        prev["CREDIT_TO_APPLICATION"] = prev["AMT_CREDIT"] / prev["AMT_APPLICATION"].replace(0, np.nan)
-        out = prev.groupby("SK_ID_CURR").agg(
-            PREV_APP_COUNT=("SK_ID_PREV", "count"),
-            PREV_REFUSAL_RATE=("IS_REFUSED", "mean"),
-            PREV_APPROVAL_RATE=("IS_APPROVED", "mean"),
-            PREV_AMT_CREDIT_MEAN=("AMT_CREDIT", "mean"),
-            PREV_AMT_ANNUITY_MEAN=("AMT_ANNUITY", "mean"),
-            PREV_DAYS_DECISION_MEAN=("DAYS_DECISION", "mean"),
-            PREV_CNT_PAYMENT_MEAN=("CNT_PAYMENT", "mean"),
-            PREV_DOWN_PAYMENT_RATE_MEAN=("RATE_DOWN_PAYMENT", "mean"),
-            PREV_APP_CREDIT_RATIO_MEAN=("CREDIT_TO_APPLICATION", "mean"),
-            PREV_INSURED_RATE=("NFLAG_INSURED_ON_APPROVAL", "mean"),
-        )
-        del prev
-        gc.collect()
-        return _downcast(out)
-
-    # --- full ---
     # Same 365243 sentinel as DAYS_EMPLOYED, here meaning "never happened".
     for c in ["DAYS_FIRST_DRAWING", "DAYS_FIRST_DUE", "DAYS_LAST_DUE_1ST_VERSION", "DAYS_LAST_DUE", "DAYS_TERMINATION"]:
         prev[c] = prev[c].replace(365243, np.nan)
@@ -324,7 +298,7 @@ def previous_applications(level: str) -> pd.DataFrame:
 # ----------------------------------------------------------------------------------
 # POS_CASH_balance
 # ----------------------------------------------------------------------------------
-def pos_cash(level: str) -> pd.DataFrame:
+def pos_cash() -> pd.DataFrame:
     pos = pd.read_csv(
         os.path.join(DATA, "POS_CASH_balance.csv"),
         dtype={
@@ -339,21 +313,6 @@ def pos_cash(level: str) -> pd.DataFrame:
         },
     )
 
-    if level == "base":
-        pos["IS_COMPLETED"] = (pos["NAME_CONTRACT_STATUS"] == "Completed").astype("int8")
-        out = pos.groupby("SK_ID_CURR").agg(
-            POS_RECORD_COUNT=("SK_ID_PREV", "count"),
-            POS_SK_DPD_MEAN=("SK_DPD", "mean"),
-            POS_SK_DPD_DEF_MEAN=("SK_DPD_DEF", "mean"),
-            POS_COMPLETED_RATIO=("IS_COMPLETED", "mean"),
-            POS_CNT_INSTALMENT_MEAN=("CNT_INSTALMENT", "mean"),
-            POS_MONTHS_BALANCE_MIN=("MONTHS_BALANCE", "min"),
-        )
-        del pos
-        gc.collect()
-        return _downcast(out)
-
-    # --- full ---
     pos["IS_DPD"] = (pos["SK_DPD"] > 0).astype("int8")
     pos["IS_DPD_DEF"] = (pos["SK_DPD_DEF"] > 0).astype("int8")
     pos["INSTALMENT_PAID_RATIO"] = 1 - pos["CNT_INSTALMENT_FUTURE"] / (pos["CNT_INSTALMENT"] + 1e-6)
@@ -392,7 +351,7 @@ def pos_cash(level: str) -> pd.DataFrame:
 # ----------------------------------------------------------------------------------
 # installments_payments
 # ----------------------------------------------------------------------------------
-def installments(level: str) -> pd.DataFrame:
+def installments() -> pd.DataFrame:
     ins = pd.read_csv(
         os.path.join(DATA, "installments_payments.csv"),
         dtype={
@@ -407,24 +366,6 @@ def installments(level: str) -> pd.DataFrame:
         },
     )
 
-    if level == "base":
-        ins["LATE_DAYS"] = (ins["DAYS_ENTRY_PAYMENT"] - ins["DAYS_INSTALMENT"]).clip(lower=0)
-        ins["PAYMENT_DIFF"] = ins["AMT_INSTALMENT"] - ins["AMT_PAYMENT"]
-        ins["IS_LATE"] = (ins["LATE_DAYS"] > 0).astype("int8")
-        ins["IS_UNDERPAID"] = (ins["PAYMENT_DIFF"] > 0).astype("int8")
-        out = ins.groupby("SK_ID_CURR").agg(
-            INSTALLMENT_COUNT=("SK_ID_PREV", "count"),
-            INSTALLMENT_LATE_DAYS_MEAN=("LATE_DAYS", "mean"),
-            INSTALLMENT_PAYMENT_DIFF_MEAN=("PAYMENT_DIFF", "mean"),
-            INSTALLMENT_LATE_RATE=("IS_LATE", "mean"),
-            INSTALLMENT_UNDERPAID_RATE=("IS_UNDERPAID", "mean"),
-            INSTALLMENT_NUM_VERSION_NUNIQUE=("NUM_INSTALMENT_VERSION", "nunique"),
-        )
-        del ins
-        gc.collect()
-        return _downcast(out)
-
-    # --- full ---
     eps = 1e-6
     ins["PAYMENT_PERC"] = ins["AMT_PAYMENT"] / (ins["AMT_INSTALMENT"] + eps)
     ins["PAYMENT_DIFF"] = ins["AMT_INSTALMENT"] - ins["AMT_PAYMENT"]
@@ -487,25 +428,9 @@ def installments(level: str) -> pd.DataFrame:
 # ----------------------------------------------------------------------------------
 # credit_card_balance
 # ----------------------------------------------------------------------------------
-def credit_card(level: str) -> pd.DataFrame:
+def credit_card() -> pd.DataFrame:
     cc = _downcast(pd.read_csv(os.path.join(DATA, "credit_card_balance.csv")))
 
-    if level == "base":
-        cc["UTILIZATION"] = cc["AMT_BALANCE"] / cc["AMT_CREDIT_LIMIT_ACTUAL"].replace(0, np.nan)
-        cc["PAYMENT_TO_MIN"] = cc["AMT_PAYMENT_TOTAL_CURRENT"] / cc["AMT_INST_MIN_REGULARITY"].replace(0, np.nan)
-        out = cc.groupby("SK_ID_CURR").agg(
-            CC_RECORD_COUNT=("SK_ID_PREV", "count"),
-            CC_UTILIZATION_MEAN=("UTILIZATION", "mean"),
-            CC_SK_DPD_MEAN=("SK_DPD", "mean"),
-            CC_DRAWINGS_ATM_MEAN=("AMT_DRAWINGS_ATM_CURRENT", "mean"),
-            CC_CNT_DRAWINGS_MEAN=("CNT_DRAWINGS_CURRENT", "mean"),
-            CC_PAYMENT_TO_MIN_MEAN=("PAYMENT_TO_MIN", "mean"),
-        )
-        del cc
-        gc.collect()
-        return _downcast(out)
-
-    # --- full ---
     eps = 1e-6
     cc["UTILIZATION"] = cc["AMT_BALANCE"] / (cc["AMT_CREDIT_LIMIT_ACTUAL"] + eps)
     cc["PAYMENT_TO_MIN"] = cc["AMT_PAYMENT_TOTAL_CURRENT"] / (cc["AMT_INST_MIN_REGULARITY"] + eps)
@@ -552,10 +477,10 @@ def credit_card(level: str) -> pd.DataFrame:
 
 
 # ----------------------------------------------------------------------------------
-def build(level: str) -> pd.DataFrame:
-    print(f"[fe] building level={level}")
-    df = application(level)
-    print(f"  application            -> {df.shape}")
+def build_full() -> pd.DataFrame:
+    """Every engineered feature, one row per application (~1,480 columns, ~15 minutes)."""
+    print("[features] application")
+    df = application()
 
     for name, fn in [
         ("bureau", bureau_and_balance),
@@ -564,36 +489,26 @@ def build(level: str) -> pd.DataFrame:
         ("installments", installments),
         ("credit_card", credit_card),
     ]:
-        agg = fn(level)
-        print(f"  {name:22s} -> {agg.shape[1]} features")
+        agg = fn()
+        print(f"[features] {name:22s} -> {agg.shape[1]} features")
         df = df.join(agg, how="left", on="SK_ID_CURR")
         del agg
         gc.collect()
 
-    if level == "base":
-        # The original notebook filled the *_COUNT columns with 0 (no rows in that
-        # table unambiguously means zero records) and left the rate/mean columns NaN.
-        count_cols = [
-            "BUREAU_LOAN_COUNT", "BUREAU_CNT_PROLONGED_SUM", "BUREAU_CREDIT_TYPE_NUNIQUE",
-            "PREV_APP_COUNT", "POS_RECORD_COUNT", "CC_RECORD_COUNT",
-            "INSTALLMENT_COUNT", "INSTALLMENT_NUM_VERSION_NUNIQUE",
-        ]
-        df[count_cols] = df[count_cols].fillna(0)
-    else:
-        # Same idea, generalised: any *_COUNT column is a true zero when absent.
-        count_cols = [c for c in df.columns if c.endswith("_COUNT") and c != "EXT_SOURCES_NAN_COUNT"]
-        df[count_cols] = df[count_cols].fillna(0)
+    # No rows in a table means zero records, so every count is a true zero when absent.
+    count_cols = [c for c in df.columns if c.endswith("_COUNT") and c != "EXT_SOURCES_NAN_COUNT"]
+    df[count_cols] = df[count_cols].fillna(0)
 
-        # Cross-table ratios -- these only exist once everything is joined.
-        eps = 1e-6
-        df["ANNUITY_TO_PREV_ANNUITY"] = df["AMT_ANNUITY"] / (df["PREV_AMT_ANNUITY_MEAN"] + eps)
-        df["CREDIT_TO_PREV_CREDIT"] = df["AMT_CREDIT"] / (df["PREV_AMT_CREDIT_MEAN"] + eps)
-        df["BUREAU_DEBT_TO_INCOME"] = df["BURO_AMT_CREDIT_SUM_DEBT_SUM"] / (df["AMT_INCOME_TOTAL"] + eps)
-        df["BUREAU_CREDIT_TO_INCOME"] = df["BURO_AMT_CREDIT_SUM_SUM"] / (df["AMT_INCOME_TOTAL"] + eps)
-        # Total annuity burden = this loan + everything still open at the bureau.
-        df["TOTAL_ANNUITY_TO_INCOME"] = (
-            df["AMT_ANNUITY"].fillna(0) + df["BURO_ACTIVE_AMT_ANNUITY_SUM"].fillna(0)
-        ) / (df["AMT_INCOME_TOTAL"] + eps)
+    # Cross-table ratios -- these only exist once everything is joined.
+    eps = 1e-6
+    df["ANNUITY_TO_PREV_ANNUITY"] = df["AMT_ANNUITY"] / (df["PREV_AMT_ANNUITY_MEAN"] + eps)
+    df["CREDIT_TO_PREV_CREDIT"] = df["AMT_CREDIT"] / (df["PREV_AMT_CREDIT_MEAN"] + eps)
+    df["BUREAU_DEBT_TO_INCOME"] = df["BURO_AMT_CREDIT_SUM_DEBT_SUM"] / (df["AMT_INCOME_TOTAL"] + eps)
+    df["BUREAU_CREDIT_TO_INCOME"] = df["BURO_AMT_CREDIT_SUM_SUM"] / (df["AMT_INCOME_TOTAL"] + eps)
+    # Total annuity burden = this loan + everything still open at the bureau.
+    df["TOTAL_ANNUITY_TO_INCOME"] = (
+        df["AMT_ANNUITY"].fillna(0) + df["BURO_ACTIVE_AMT_ANNUITY_SUM"].fillna(0)
+    ) / (df["AMT_INCOME_TOTAL"] + eps)
 
     # Drop columns that are entirely constant or entirely missing. They cost memory and
     # only add noise to the feature-importance readings.
@@ -601,28 +516,257 @@ def build(level: str) -> pd.DataFrame:
     dead = [c for c in nunique[nunique <= 1].index if c != "TARGET"]
     if dead:
         df = df.drop(columns=dead)
-        print(f"  dropped {len(dead)} constant/all-missing columns")
+        print(f"[features] dropped {len(dead)} constant/all-missing columns")
 
     # LightGBM rejects these characters in feature names.
     df.columns = [
         c.replace(" ", "_").replace(":", "_").replace(",", "_").replace("[", "(").replace("]", ")")
         for c in df.columns
     ]
-    print(f"[fe] final shape {df.shape}")
+    print(f"[features] full matrix {df.shape}")
     return df
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--level", choices=["base", "full"], default="full")
-    args = ap.parse_args()
+# ----------------------------------------------------------------------------------
+# cohort and per-prior-loan features
+# ----------------------------------------------------------------------------------
+# Hand-written tags so two cohorts can never share a name. Truncating the key names did
+# collide (NAME_EDUCATION_TYPE and NAME_INCOME_TYPE both became "NAME") and silently
+# dropped 16 features (02_research §2.9). A cohort without a tag fails loudly here.
+COHORT_TAG = {
+    ("ORGANIZATION_TYPE",): "ORG",
+    ("OCCUPATION_TYPE",): "OCC",
+    ("NAME_EDUCATION_TYPE",): "EDU",
+    ("NAME_INCOME_TYPE",): "INC",
+    ("CODE_GENDER", "NAME_EDUCATION_TYPE"): "GENDER_EDU",
+}
+COHORTS = list(COHORT_TAG)
+assert len(set(COHORT_TAG.values())) == len(COHORT_TAG), "cohort tags must be unique"
 
+COHORT_NUMERICS = [
+    "EXT_SOURCES_MEAN",
+    "AMT_INCOME_TOTAL",
+    "AMT_CREDIT",
+    "AMT_ANNUITY",
+    "CREDIT_INCOME_RATIO",
+    "ANNUITY_INCOME_RATIO",
+    "DAYS_EMPLOYED",
+    "DAYS_BIRTH",
+]
+
+
+def cohort_features(df: pd.DataFrame, fit_mask: np.ndarray) -> pd.DataFrame:
+    """
+    Cohort statistics are estimated on training rows only (`fit_mask`) and then mapped
+    onto every row. They use no target information, so pooling would not leak the label
+    -- but estimating them over train+test would still be transductive, and a held-out
+    test set is supposed to stand in for applicants the model has never seen.
+    """
+    out = pd.DataFrame(index=df.index)
+    fit = df.loc[fit_mask]
+    for keys in COHORTS:
+        keys = [k for k in keys if k in df.columns]
+        if not keys:
+            continue
+        tag = COHORT_TAG[tuple(keys)]
+        g = fit.groupby(keys, observed=True, dropna=False)
+        key_idx = pd.MultiIndex.from_frame(df[keys]) if len(keys) > 1 else pd.Index(df[keys[0]])
+        for col in COHORT_NUMERICS:
+            if col not in df.columns:
+                continue
+            stats = g[col].agg(["mean", "std"])
+            mean = pd.Series(stats["mean"].reindex(key_idx).values, index=df.index)
+            std = pd.Series(stats["std"].reindex(key_idx).values, index=df.index)
+            out[f"COH_{tag}_{col}_MEAN"] = mean.astype("float32")
+            # Deviation from cohort, in cohort standard deviations.
+            out[f"COH_{tag}_{col}_Z"] = ((df[col] - mean) / (std + 1e-6)).astype("float32")
+    return out
+
+
+def form_feature_columns(columns, include_protected: bool = False) -> list[str]:
+    """The columns in `columns` that a preapproval form can populate, in their given order.
+
+    Worked out from the formulas rather than listed by hand: every form input is set on a
+    one-row frame, the application features are derived from it with the same code the
+    backend runs, and whatever comes out populated counts. Cohort features count when every
+    key of their cohort is a form input. So a new formula in `add_application_features`
+    joins the form model automatically if, and only if, a form can feed it.
+    """
+    inputs = FORM_INPUTS + (PROTECTED if include_protected else [])
+    probe = pd.DataFrame([{c: 1.0 for c in inputs}])
+    derived = add_application_features(probe)
+    available = set(derived.columns[derived.notna().iloc[0].to_numpy()])
+    for keys, tag in COHORT_TAG.items():
+        if set(keys) <= set(inputs):
+            for col in COHORT_NUMERICS:
+                if col in available:
+                    available |= {f"COH_{tag}_{col}_MEAN", f"COH_{tag}_{col}_Z"}
+    return [c for c in columns if c in available]
+
+
+def export_cohort_tables(df: pd.DataFrame, fit_mask, path: str, cohorts=None) -> dict:
+    """Save the cohort means and standard deviations so the backend can rebuild these features.
+
+    The serving path has one applicant, not a population, so it cannot compute a group mean
+    on the fly; without these tables every cohort feature would arrive missing. `cohorts`
+    limits the export to the cohorts the served model uses (default: all of them).
+
+    Statistics come from the same training rows `cohort_features` uses, so a served value is
+    identical to the one the model was trained on. Kept here rather than in the backend for the
+    same reason `add_application_features` is shared: one definition, no drift.
+    """
+    fit = df.loc[fit_mask]
+    out = {"numerics": list(COHORT_NUMERICS), "cohorts": {}}
+    for keys in (COHORTS if cohorts is None else cohorts):
+        keys = [k for k in keys if k in df.columns]
+        if not keys:
+            continue
+        tag = COHORT_TAG[tuple(keys)]
+        g = fit.groupby(keys, observed=True, dropna=False)
+        stats = {}
+        for col in COHORT_NUMERICS:
+            if col not in df.columns:
+                continue
+            agg = g[col].agg(["mean", "std"])
+            for idx, row in agg.iterrows():
+                # Multi-key cohorts are keyed on the joined values, matching the backend.
+                k = "||".join(str(v) for v in (idx if isinstance(idx, tuple) else (idx,)))
+                if pd.isna(row["mean"]):
+                    continue
+                stats.setdefault(k, {})[col] = [float(row["mean"]),
+                                                float(row["std"]) if pd.notna(row["std"]) else 0.0]
+        out["cohorts"][tag] = {"keys": keys, "stats": stats}
+
+    with open(path, "w") as f:
+        json.dump(out, f)
+    n = sum(len(c["stats"]) for c in out["cohorts"].values())
+    print(f"  wrote {path}: {len(out['cohorts'])} cohorts, {n} groups, "
+          f"{os.path.getsize(path)/1e3:.0f} KB")
+    return out
+
+
+def installments_per_loan() -> pd.DataFrame:
+    """Aggregate per prior loan first, then summarise the distribution across loans."""
+    ins = pd.read_csv(
+        os.path.join(DATA, "installments_payments.csv"),
+        usecols=["SK_ID_PREV", "SK_ID_CURR", "DAYS_INSTALMENT", "DAYS_ENTRY_PAYMENT",
+                 "AMT_INSTALMENT", "AMT_PAYMENT"],
+        dtype={"SK_ID_PREV": "int32", "SK_ID_CURR": "int32", "DAYS_INSTALMENT": "float32",
+               "DAYS_ENTRY_PAYMENT": "float32", "AMT_INSTALMENT": "float32", "AMT_PAYMENT": "float32"},
+    )
+    ins["DPD"] = (ins["DAYS_ENTRY_PAYMENT"] - ins["DAYS_INSTALMENT"]).clip(lower=0)
+    ins["SHORTFALL"] = (ins["AMT_INSTALMENT"] - ins["AMT_PAYMENT"]).clip(lower=0)
+    ins["IS_LATE"] = (ins["DPD"] > 0).astype("int8")
+
+    per_loan = ins.groupby(["SK_ID_CURR", "SK_ID_PREV"]).agg(
+        LOAN_DPD_MAX=("DPD", "max"),
+        LOAN_DPD_MEAN=("DPD", "mean"),
+        LOAN_LATE_RATE=("IS_LATE", "mean"),
+        LOAN_SHORTFALL_SUM=("SHORTFALL", "sum"),
+        LOAN_N=("DPD", "size"),
+    ).reset_index()
+    del ins
+    gc.collect()
+
+    agg = per_loan.groupby("SK_ID_CURR").agg(
+        INSL_DPD_MAX_MAX=("LOAN_DPD_MAX", "max"),
+        INSL_DPD_MAX_MEAN=("LOAN_DPD_MAX", "mean"),
+        INSL_DPD_MAX_STD=("LOAN_DPD_MAX", "std"),
+        INSL_DPD_MEAN_MAX=("LOAN_DPD_MEAN", "max"),
+        INSL_LATE_RATE_MAX=("LOAN_LATE_RATE", "max"),
+        INSL_LATE_RATE_MEAN=("LOAN_LATE_RATE", "mean"),
+        INSL_LATE_RATE_STD=("LOAN_LATE_RATE", "std"),
+        INSL_SHORTFALL_MAX=("LOAN_SHORTFALL_SUM", "max"),
+        INSL_SHORTFALL_SUM=("LOAN_SHORTFALL_SUM", "sum"),
+        INSL_N_LOANS=("LOAN_N", "size"),
+        INSL_N_PER_LOAN_MEAN=("LOAN_N", "mean"),
+    )
+    # Fraction of prior loans that were ever late -- concentration matters, not just volume.
+    bad = per_loan[per_loan["LOAN_LATE_RATE"] > 0].groupby("SK_ID_CURR").size()
+    agg["INSL_LOANS_EVER_LATE"] = bad.reindex(agg.index).fillna(0)
+    agg["INSL_FRAC_LOANS_LATE"] = agg["INSL_LOANS_EVER_LATE"] / agg["INSL_N_LOANS"]
+
+    del per_loan
+    gc.collect()
+    return agg.astype("float32")
+
+
+# ----------------------------------------------------------------------------------
+# cache and loading
+# ----------------------------------------------------------------------------------
+def train_mask(target: pd.Series) -> np.ndarray:
+    """Which rows are in the training split. `train_test_split` stratified on y alone gives
+    the same partition whatever columns are loaded, so this matches the notebook's split."""
+    train_idx, _ = train_test_split(target.index, test_size=0.2, random_state=SEED, stratify=target)
+    return target.index.isin(train_idx)
+
+
+def build_extra() -> pd.DataFrame:
+    """Cohort and per-prior-loan features, in the full matrix's row order.
+
+    Reads the cohort columns back from the saved full matrix rather than taking the frame
+    in memory: a missing occupation is stored as None in parquet, which groups into its own
+    cohort, and the served model was trained on features built exactly this way.
+    """
+    cols = ["SK_ID_CURR", "TARGET"] + sorted({c for keys in COHORTS for c in keys} | set(COHORT_NUMERICS))
+    df = pd.read_parquet(FULL_PATH, columns=cols)
+    extra = cohort_features(df, train_mask(df["TARGET"]))
+    loans = installments_per_loan().reindex(df["SK_ID_CURR"].values)
+    loans.index = extra.index
+    extra = pd.concat([extra, loans], axis=1)
+    extra.insert(0, "SK_ID_CURR", df["SK_ID_CURR"].to_numpy())
+    print(f"[features] extra features {extra.shape[1] - 1}")
+    return extra
+
+
+def build_cache():
+    """Build both feature matrices from the raw CSVs and save them to cache/."""
     os.makedirs(CACHE, exist_ok=True)
-    df = build(args.level)
-    out = os.path.join(CACHE, f"features_{args.level}.parquet")
-    df.to_parquet(out, compression="zstd", index=False)
-    print(f"[fe] wrote {out} ({os.path.getsize(out)/1e6:.0f} MB)")
+    build_full().to_parquet(FULL_PATH, compression="zstd", index=False)
+    build_extra().to_parquet(EXTRA_PATH, compression="zstd", index=False)
+    print(f"[features] wrote {FULL_PATH} and {EXTRA_PATH}")
 
 
-if __name__ == "__main__":
-    main()
+def sanitize(names) -> list[str]:
+    """LightGBM rejects non-alphanumeric characters in feature names; make them safe and unique."""
+    out, seen = [], {}
+    for n in names:
+        s = re.sub(r"[^0-9a-zA-Z_]+", "_", str(n)).strip("_") or "f"
+        if s in seen:
+            seen[s] += 1
+            s = f"{s}_{seen[s]}"
+        else:
+            seen[s] = 0
+        out.append(s)
+    return out
+
+
+def load_matrix() -> tuple[pd.DataFrame, pd.Series]:
+    """The cached features joined into one frame, as (X, y).
+
+    Text columns become pandas categories so LightGBM can split on them natively. The
+    categories are assigned before any split, so train and test share one encoding.
+    """
+    df = pd.read_parquet(FULL_PATH)
+    extra = pd.read_parquet(EXTRA_PATH)
+    assert np.array_equal(df["SK_ID_CURR"].to_numpy(), extra["SK_ID_CURR"].to_numpy()), "row order mismatch"
+    extra = extra.drop(columns=["SK_ID_CURR"])
+    extra.index = df.index
+    df = pd.concat([df, extra], axis=1)
+    del extra
+    gc.collect()
+
+    df.columns = sanitize(df.columns)
+    y = df["TARGET"].astype("int8")
+    X = df.drop(columns=["SK_ID_CURR", "TARGET"])
+    for c in X.select_dtypes(include=["object"]).columns:
+        X[c] = X[c].astype("category")
+    return X, y
+
+
+def extra_columns() -> list[str]:
+    """Names of the cohort and per-loan features, read from the parquet schema (no data load)."""
+    import pyarrow.parquet as pq
+
+    names = pq.ParquetFile(EXTRA_PATH).schema_arrow.names
+    return [c for c in sanitize(names) if c != "SK_ID_CURR"]

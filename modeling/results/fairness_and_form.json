@@ -1,0 +1,476 @@
+{
+  "cutoff": 0.1665351755507329,
+  "n_features": 693,
+  "form_columns": [
+    "EXT_SOURCES_MEAN",
+    "ORGANIZATION_TYPE",
+    "EXT_SOURCES_WEIGHTED",
+    "EXT_SOURCES_MIN",
+    "CREDIT_TERM",
+    "EXT_SOURCES_MAX",
+    "OCCUPATION_TYPE",
+    "EXT_SOURCE_2_X_EMPLOYED",
+    "CREDIT_MINUS_GOODS",
+    "CREDIT_GOODS_RATIO",
+    "DAYS_BIRTH",
+    "EXT_SOURCE_3_X_EMPLOYED",
+    "EXT_SOURCE_3_X_AGE",
+    "CODE_GENDER",
+    "AMT_ANNUITY",
+    "NAME_EDUCATION_TYPE",
+    "EXT_SOURCES_PROD",
+    "EXT_SOURCE_3",
+    "EXT_SOURCE_1",
+    "AMT_GOODS_PRICE",
+    "ANNUITY_INCOME_RATIO",
+    "DAYS_EMPLOYED",
+    "EXT_SOURCE_2",
+    "NAME_FAMILY_STATUS",
+    "EXT_SOURCE_1_X_AGE",
+    "EXT_SOURCE_2_X_AGE",
+    "AMT_CREDIT",
+    "EMPLOYED_BIRTH_RATIO",
+    "EXT_SOURCES_STD",
+    "EXT_SOURCE_1_X_EMPLOYED",
+    "CREDIT_INCOME_RATIO",
+    "GOODS_INCOME_RATIO",
+    "INCOME_PER_PERSON",
+    "AMT_INCOME_TOTAL",
+    "INCOME_PER_CHILD",
+    "CC_UTILIZATION_MEAN",
+    "NAME_INCOME_TYPE",
+    "COH_ORG_EXT_SOURCES_MEAN_MEAN",
+    "COH_ORG_EXT_SOURCES_MEAN_Z",
+    "COH_ORG_AMT_INCOME_TOTAL_MEAN",
+    "COH_ORG_AMT_INCOME_TOTAL_Z",
+    "COH_ORG_AMT_CREDIT_MEAN",
+    "COH_ORG_AMT_CREDIT_Z",
+    "COH_ORG_AMT_ANNUITY_MEAN",
+    "COH_ORG_AMT_ANNUITY_Z",
+    "COH_ORG_CREDIT_INCOME_RATIO_MEAN",
+    "COH_ORG_CREDIT_INCOME_RATIO_Z",
+    "COH_ORG_ANNUITY_INCOME_RATIO_MEAN",
+    "COH_ORG_ANNUITY_INCOME_RATIO_Z",
+    "COH_ORG_DAYS_EMPLOYED_MEAN",
+    "COH_ORG_DAYS_EMPLOYED_Z",
+    "COH_ORG_DAYS_BIRTH_MEAN",
+    "COH_ORG_DAYS_BIRTH_Z",
+    "COH_OCC_EXT_SOURCES_MEAN_MEAN",
+    "COH_OCC_EXT_SOURCES_MEAN_Z",
+    "COH_OCC_AMT_INCOME_TOTAL_MEAN",
+    "COH_OCC_AMT_INCOME_TOTAL_Z",
+    "COH_OCC_AMT_CREDIT_MEAN",
+    "COH_OCC_AMT_CREDIT_Z",
+    "COH_OCC_AMT_ANNUITY_MEAN",
+    "COH_OCC_AMT_ANNUITY_Z",
+    "COH_OCC_CREDIT_INCOME_RATIO_MEAN",
+    "COH_OCC_CREDIT_INCOME_RATIO_Z",
+    "COH_OCC_ANNUITY_INCOME_RATIO_MEAN",
+    "COH_OCC_ANNUITY_INCOME_RATIO_Z",
+    "COH_OCC_DAYS_EMPLOYED_MEAN",
+    "COH_OCC_DAYS_EMPLOYED_Z",
+    "COH_OCC_DAYS_BIRTH_MEAN",
+    "COH_OCC_DAYS_BIRTH_Z",
+    "COH_EDU_EXT_SOURCES_MEAN_MEAN",
+    "COH_EDU_EXT_SOURCES_MEAN_Z",
+    "COH_EDU_AMT_INCOME_TOTAL_MEAN",
+    "COH_EDU_AMT_INCOME_TOTAL_Z",
+    "COH_EDU_AMT_CREDIT_MEAN",
+    "COH_EDU_AMT_CREDIT_Z",
+    "COH_EDU_AMT_ANNUITY_MEAN",
+    "COH_EDU_AMT_ANNUITY_Z",
+    "COH_EDU_CREDIT_INCOME_RATIO_MEAN",
+    "COH_EDU_CREDIT_INCOME_RATIO_Z",
+    "COH_EDU_ANNUITY_INCOME_RATIO_MEAN",
+    "COH_EDU_ANNUITY_INCOME_RATIO_Z",
+    "COH_EDU_DAYS_EMPLOYED_MEAN",
+    "COH_EDU_DAYS_EMPLOYED_Z",
+    "COH_EDU_DAYS_BIRTH_MEAN",
+    "COH_EDU_DAYS_BIRTH_Z",
+    "COH_INC_EXT_SOURCES_MEAN_MEAN",
+    "COH_INC_EXT_SOURCES_MEAN_Z",
+    "COH_INC_AMT_INCOME_TOTAL_MEAN",
+    "COH_INC_AMT_INCOME_TOTAL_Z",
+    "COH_INC_AMT_CREDIT_MEAN",
+    "COH_INC_AMT_CREDIT_Z",
+    "COH_INC_AMT_ANNUITY_MEAN",
+    "COH_INC_AMT_ANNUITY_Z",
+    "COH_INC_CREDIT_INCOME_RATIO_MEAN",
+    "COH_INC_CREDIT_INCOME_RATIO_Z",
+    "COH_INC_ANNUITY_INCOME_RATIO_MEAN",
+    "COH_INC_ANNUITY_INCOME_RATIO_Z",
+    "COH_INC_DAYS_EMPLOYED_MEAN",
+    "COH_INC_DAYS_EMPLOYED_Z",
+    "COH_INC_DAYS_BIRTH_MEAN",
+    "COH_INC_DAYS_BIRTH_Z",
+    "COH_GENDER_EDU_EXT_SOURCES_MEAN_MEAN",
+    "COH_GENDER_EDU_EXT_SOURCES_MEAN_Z",
+    "COH_GENDER_EDU_AMT_INCOME_TOTAL_MEAN",
+    "COH_GENDER_EDU_AMT_INCOME_TOTAL_Z",
+    "COH_GENDER_EDU_AMT_CREDIT_MEAN",
+    "COH_GENDER_EDU_AMT_CREDIT_Z",
+    "COH_GENDER_EDU_AMT_ANNUITY_MEAN",
+    "COH_GENDER_EDU_AMT_ANNUITY_Z",
+    "COH_GENDER_EDU_CREDIT_INCOME_RATIO_MEAN",
+    "COH_GENDER_EDU_CREDIT_INCOME_RATIO_Z",
+    "COH_GENDER_EDU_ANNUITY_INCOME_RATIO_MEAN",
+    "COH_GENDER_EDU_ANNUITY_INCOME_RATIO_Z",
+    "COH_GENDER_EDU_DAYS_EMPLOYED_MEAN",
+    "COH_GENDER_EDU_DAYS_EMPLOYED_Z",
+    "COH_GENDER_EDU_DAYS_BIRTH_MEAN",
+    "COH_GENDER_EDU_DAYS_BIRTH_Z"
+  ],
+  "protected_columns": [
+    "CODE_GENDER",
+    "NAME_FAMILY_STATUS",
+    "COH_GENDER_EDU_EXT_SOURCES_MEAN_MEAN",
+    "COH_GENDER_EDU_EXT_SOURCES_MEAN_Z",
+    "COH_GENDER_EDU_AMT_INCOME_TOTAL_MEAN",
+    "COH_GENDER_EDU_AMT_INCOME_TOTAL_Z",
+    "COH_GENDER_EDU_AMT_CREDIT_MEAN",
+    "COH_GENDER_EDU_AMT_CREDIT_Z",
+    "COH_GENDER_EDU_AMT_ANNUITY_MEAN",
+    "COH_GENDER_EDU_AMT_ANNUITY_Z",
+    "COH_GENDER_EDU_CREDIT_INCOME_RATIO_MEAN",
+    "COH_GENDER_EDU_CREDIT_INCOME_RATIO_Z",
+    "COH_GENDER_EDU_ANNUITY_INCOME_RATIO_MEAN",
+    "COH_GENDER_EDU_ANNUITY_INCOME_RATIO_Z",
+    "COH_GENDER_EDU_DAYS_EMPLOYED_MEAN",
+    "COH_GENDER_EDU_DAYS_EMPLOYED_Z",
+    "COH_GENDER_EDU_DAYS_BIRTH_MEAN",
+    "COH_GENDER_EDU_DAYS_BIRTH_Z"
+  ],
+  "models": {
+    "baseline": {
+      "full history": {
+        "auc": 0.7971525780842643,
+        "avg_precision": 0.3027450043837194,
+        "brier": 0.06481899306340526,
+        "mean_predicted": 0.07888907966108578,
+        "base_rate": 0.08072908198107379,
+        "decline_rate": 0.12654873012259765,
+        "defaults_caught": 0.45780463242698893,
+        "approval_by_gender": {
+          "F": 0.9017117205998422,
+          "M": 0.8187804179788147,
+          "ratio_M_to_F": 0.9080290288720442
+        }
+      },
+      "history blanked": {
+        "auc": 0.759799328269213,
+        "avg_precision": 0.24753009225190395,
+        "brier": 0.06785832524674094,
+        "mean_predicted": 0.0913594358350482,
+        "base_rate": 0.08072908198107379,
+        "decline_rate": 0.15171864329615298,
+        "defaults_caught": 0.4431017119838872,
+        "approval_by_gender": {
+          "F": 0.8848164956590371,
+          "M": 0.777602824697013,
+          "ratio_M_to_F": 0.8788294844320593
+        }
+      },
+      "true form": {
+        "auc": 0.7485701001871333,
+        "avg_precision": 0.23393660584940934,
+        "brier": 0.06870666621439514,
+        "mean_predicted": 0.09835914846168894,
+        "base_rate": 0.08072908198107379,
+        "decline_rate": 0.164075965009268,
+        "defaults_caught": 0.44954682779456195,
+        "approval_by_gender": {
+          "F": 0.8817087608524072,
+          "M": 0.7473518465502433,
+          "ratio_M_to_F": 0.847617580466965
+        }
+      }
+    },
+    "without sex and marital status": {
+      "full history": {
+        "auc": 0.7950464401027402,
+        "avg_precision": 0.3007702422853888,
+        "brier": 0.06493006324030075,
+        "mean_predicted": 0.07957649944635921,
+        "base_rate": 0.08072908198107379,
+        "decline_rate": 0.1271340769405873,
+        "defaults_caught": 0.45901309164149046,
+        "approval_by_gender": {
+          "F": 0.8944356748224151,
+          "M": 0.8311384674110125,
+          "ratio_M_to_F": 0.9292322419675736
+        }
+      },
+      "history blanked": {
+        "auc": 0.7592731197374136,
+        "avg_precision": 0.24853174570238615,
+        "brier": 0.06784153647115326,
+        "mean_predicted": 0.09265131192275738,
+        "base_rate": 0.08072908198107379,
+        "decline_rate": 0.15196253780364866,
+        "defaults_caught": 0.4420946626384693,
+        "approval_by_gender": {
+          "F": 0.8756412786108919,
+          "M": 0.7946368928332856,
+          "ratio_M_to_F": 0.9074913577554147
+        }
+      },
+      "true form": {
+        "auc": 0.7490579233900441,
+        "avg_precision": 0.23619944144576105,
+        "brier": 0.06883187724085493,
+        "mean_predicted": 0.10306809505225285,
+        "base_rate": 0.08072908198107379,
+        "decline_rate": 0.17823810607785112,
+        "defaults_caught": 0.4741188318227593,
+        "approval_by_gender": {
+          "F": 0.858820047355959,
+          "M": 0.7500715717148583,
+          "ratio_M_to_F": 0.8733745492133032
+        }
+      }
+    },
+    "form-only": {
+      "true form": {
+        "auc": 0.7673597026471145,
+        "avg_precision": 0.2566151219090435,
+        "brier": 0.06716115198844183,
+        "mean_predicted": 0.08027266612837539,
+        "base_rate": 0.08072908198107379,
+        "decline_rate": 0.12056518487203668,
+        "defaults_caught": 0.39778449144008055,
+        "approval_by_gender": {
+          "F": 0.9112322415153907,
+          "M": 0.8179215574005153,
+          "ratio_M_to_F": 0.8975994484570711
+        }
+      }
+    },
+    "form-only, without sex and marital status": {
+      "true form": {
+        "auc": 0.766564989185045,
+        "avg_precision": 0.2548371551467552,
+        "brier": 0.06723120012951651,
+        "mean_predicted": 0.08026608426625988,
+        "base_rate": 0.08072908198107379,
+        "decline_rate": 0.11924815453155994,
+        "defaults_caught": 0.3919436052366566,
+        "approval_by_gender": {
+          "F": 0.9067926203630624,
+          "M": 0.8303750357858575,
+          "ratio_M_to_F": 0.9157276064436775
+        }
+      }
+    }
+  },
+  "calibration_true_form": {
+    "baseline": [
+      {
+        "tenth": 1,
+        "predicted": 0.018,
+        "actual": 0.0133
+      },
+      {
+        "tenth": 2,
+        "predicted": 0.0301,
+        "actual": 0.0223
+      },
+      {
+        "tenth": 3,
+        "predicted": 0.0407,
+        "actual": 0.0322
+      },
+      {
+        "tenth": 4,
+        "predicted": 0.0518,
+        "actual": 0.0392
+      },
+      {
+        "tenth": 5,
+        "predicted": 0.065,
+        "actual": 0.0514
+      },
+      {
+        "tenth": 6,
+        "predicted": 0.0811,
+        "actual": 0.0564
+      },
+      {
+        "tenth": 7,
+        "predicted": 0.1019,
+        "actual": 0.0725
+      },
+      {
+        "tenth": 8,
+        "predicted": 0.1311,
+        "actual": 0.1096
+      },
+      {
+        "tenth": 9,
+        "predicted": 0.1759,
+        "actual": 0.1488
+      },
+      {
+        "tenth": 10,
+        "predicted": 0.288,
+        "actual": 0.2616
+      }
+    ],
+    "without sex and marital status": [
+      {
+        "tenth": 1,
+        "predicted": 0.0198,
+        "actual": 0.0146
+      },
+      {
+        "tenth": 2,
+        "predicted": 0.0328,
+        "actual": 0.021
+      },
+      {
+        "tenth": 3,
+        "predicted": 0.044,
+        "actual": 0.0294
+      },
+      {
+        "tenth": 4,
+        "predicted": 0.0555,
+        "actual": 0.0416
+      },
+      {
+        "tenth": 5,
+        "predicted": 0.0687,
+        "actual": 0.0472
+      },
+      {
+        "tenth": 6,
+        "predicted": 0.0855,
+        "actual": 0.0595
+      },
+      {
+        "tenth": 7,
+        "predicted": 0.1072,
+        "actual": 0.0769
+      },
+      {
+        "tenth": 8,
+        "predicted": 0.1374,
+        "actual": 0.1094
+      },
+      {
+        "tenth": 9,
+        "predicted": 0.1835,
+        "actual": 0.1397
+      },
+      {
+        "tenth": 10,
+        "predicted": 0.2963,
+        "actual": 0.2679
+      }
+    ],
+    "form-only": [
+      {
+        "tenth": 1,
+        "predicted": 0.0116,
+        "actual": 0.0127
+      },
+      {
+        "tenth": 2,
+        "predicted": 0.0198,
+        "actual": 0.0166
+      },
+      {
+        "tenth": 3,
+        "predicted": 0.0271,
+        "actual": 0.0262
+      },
+      {
+        "tenth": 4,
+        "predicted": 0.0353,
+        "actual": 0.0358
+      },
+      {
+        "tenth": 5,
+        "predicted": 0.0453,
+        "actual": 0.046
+      },
+      {
+        "tenth": 6,
+        "predicted": 0.0583,
+        "actual": 0.0589
+      },
+      {
+        "tenth": 7,
+        "predicted": 0.0763,
+        "actual": 0.0724
+      },
+      {
+        "tenth": 8,
+        "predicted": 0.1026,
+        "actual": 0.107
+      },
+      {
+        "tenth": 9,
+        "predicted": 0.1481,
+        "actual": 0.1493
+      },
+      {
+        "tenth": 10,
+        "predicted": 0.2782,
+        "actual": 0.2826
+      }
+    ],
+    "form-only, without sex and marital status": [
+      {
+        "tenth": 1,
+        "predicted": 0.0119,
+        "actual": 0.0124
+      },
+      {
+        "tenth": 2,
+        "predicted": 0.0203,
+        "actual": 0.0185
+      },
+      {
+        "tenth": 3,
+        "predicted": 0.0276,
+        "actual": 0.0241
+      },
+      {
+        "tenth": 4,
+        "predicted": 0.0359,
+        "actual": 0.0356
+      },
+      {
+        "tenth": 5,
+        "predicted": 0.0457,
+        "actual": 0.046
+      },
+      {
+        "tenth": 6,
+        "predicted": 0.0585,
+        "actual": 0.0615
+      },
+      {
+        "tenth": 7,
+        "predicted": 0.0763,
+        "actual": 0.0743
+      },
+      {
+        "tenth": 8,
+        "predicted": 0.1026,
+        "actual": 0.1046
+      },
+      {
+        "tenth": 9,
+        "predicted": 0.1476,
+        "actual": 0.1502
+      },
+      {
+        "tenth": 10,
+        "predicted": 0.2762,
+        "actual": 0.2801
+      }
+    ]
+  },
+  "decisions_changed_by_dropping_protected": 0.0219830249422783
+}
