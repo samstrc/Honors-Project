@@ -97,7 +97,7 @@ const initialsOf = (name) =>
 function Photo({ src, name }) {
   const [failed, setFailed] = useState(false);
   return (
-    <div className="h-40 w-40 shrink-0 overflow-hidden rounded-md bg-[var(--gridline)] sm:h-48 sm:w-48">
+    <div className="h-40 w-40 shrink-0 overflow-hidden rounded-[20px] bg-[var(--gridline)] shadow-[var(--shadow-raised)] sm:h-48 sm:w-48">
       {src && !failed ? (
         <img src={src} alt={name} className="h-full w-full object-cover" onError={() => setFailed(true)} />
       ) : (
@@ -109,12 +109,12 @@ function Photo({ src, name }) {
 
 function Links({ links }) {
   return (
-    <ul className="flex flex-wrap gap-x-5 gap-y-2">
+    <ul className="flex flex-wrap gap-2">
       {links.map((l) => {
         const external = !l.href.startsWith("mailto:");
         return (
           <li key={l.label}>
-            <a href={l.href} target={external ? "_blank" : undefined} rel="noreferrer" className="link">
+            <a href={l.href} target={external ? "_blank" : undefined} rel="noreferrer" className="chip">
               {l.label}
               {external ? <span className="sr-only"> (opens in a new tab)</span> : null}
             </a>
@@ -127,11 +127,11 @@ function Links({ links }) {
 
 function Section({ id, title, children }) {
   return (
-    <section aria-labelledby={id} className="section-rule grid grid-cols-1 gap-x-14 gap-y-5 py-10 lg:grid-cols-[minmax(0,12rem)_minmax(0,1fr)]">
-      <h2 id={id} className="t-h2">
+    <section aria-labelledby={id} className="tray grid grid-cols-1 gap-2 lg:grid-cols-[minmax(0,13rem)_minmax(0,1fr)]">
+      <h2 id={id} className="t-h2 px-4 pb-2 pt-4">
         {title}
       </h2>
-      <div className="min-w-0">{children}</div>
+      <div className="raised min-w-0 p-5 sm:p-6">{children}</div>
     </section>
   );
 }
@@ -140,8 +140,8 @@ export default function AboutPage() {
   const P = PROFILE;
 
   return (
-    <div>
-      <div className="grid grid-cols-1 items-start gap-8 pb-10 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-10">
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 items-center gap-8 pb-8 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-10">
         <Photo src={P.photo} name={P.name} />
         <div>
           <h1 className="t-h1">{P.name}</h1>
@@ -174,7 +174,7 @@ export default function AboutPage() {
             <li key={`${e.title}-${e.org}`} className="grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-[8.5rem_minmax(0,1fr)]">
               <p className="t-small pt-0.5">
                 {e.when}
-                {e.upcoming ? <span className="block">upcoming</span> : null}
+                {e.upcoming ? <span className="mt-1 block w-fit rounded-full bg-[color-mix(in_srgb,var(--good)_16%,transparent)] px-2 py-0.5 text-[0.75rem] font-[600] text-good-text">upcoming</span> : null}
               </p>
               <div>
                 <h3 className="t-h3">{e.title}</h3>
@@ -192,9 +192,11 @@ export default function AboutPage() {
           {P.toolbox.map(({ label, items }) => (
             <div key={label}>
               <h3 className="t-h3 text-[0.9375rem]">{label}</h3>
-              <ul className="mt-2 space-y-1 text-[0.9375rem] text-ink-secondary">
+              <ul className="mt-3 flex flex-wrap gap-1.5">
                 {items.map((t) => (
-                  <li key={t}>{t}</li>
+                  <li key={t} className="rounded-full bg-[var(--tray)] px-3 py-1 text-[0.8125rem] text-ink-secondary">
+                    {t}
+                  </li>
                 ))}
               </ul>
             </div>

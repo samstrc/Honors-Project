@@ -93,8 +93,8 @@ function Sources({ sources }) {
               type="button"
               onClick={() => setOpen(active ? null : i)}
               aria-expanded={active}
-              className={`group flex max-w-full items-center gap-2 rounded-[4px] border px-2 py-1 text-left text-[0.8125rem] transition-colors ${
-                active ? "border-ink-muted text-ink-primary" : "border-[var(--rule)] text-ink-secondary hover:text-ink-primary"
+              className={`group flex max-w-full items-center gap-2 rounded-full border px-3 py-1 text-left text-[0.8125rem] transition-colors ${
+                active ? "border-ink-muted bg-[var(--tray)] text-ink-primary" : "border-[var(--rule)] text-ink-secondary hover:text-ink-primary"
               }`}
             >
               <span className="truncate">
@@ -154,11 +154,11 @@ function CopyButton({ text }) {
   );
 }
 
-// The conversation reads as a transcript: each question set as a small heading, its
-// answer as body text under it. No avatars or bubbles; the words are the content.
+// Your question sits in a dark bubble on the right; the answer is plain text under it,
+// since it can run long and carry tables and lists.
 function UserMessage({ content }) {
   return (
-    <p className="section-rule animate-fade-up whitespace-pre-wrap pt-5 text-[1rem] font-[620] leading-snug text-ink-primary first:border-t-0 first:pt-0">
+    <p className="ink-card ml-auto w-fit max-w-[85%] animate-fade-up whitespace-pre-wrap !rounded-[20px] !rounded-br-md px-4 py-2.5 text-[0.9375rem] leading-snug">
       {content}
     </p>
   );
@@ -168,7 +168,7 @@ function AssistantMessage({ m, hasHistory }) {
   const streaming = m.pending && m.content;
   const preparing = m.pending && !m.content;
   return (
-    <div className="group -mt-2 animate-fade-up [animation-delay:80ms]">
+    <div className="group animate-fade-up [animation-delay:80ms]">
       {preparing ? <Progress stage={m.stage} hasHistory={hasHistory} /> : null}
 
       {m.content ? (
@@ -319,10 +319,10 @@ export default function GuidePage() {
           something, the guide says so.
         </p>
         <h2 className="t-h3 mt-8">Try asking</h2>
-        <ul className="mt-2 space-y-2">
+        <ul className="mt-3 flex flex-col items-start gap-2">
           {STARTERS.map((q) => (
-            <li key={q}>
-              <button type="button" onClick={() => send(q)} disabled={sending} className="link text-left text-[0.9375rem] font-normal disabled:opacity-50">
+            <li key={q} className="max-w-full">
+              <button type="button" onClick={() => send(q)} disabled={sending} className="chip rounded-[18px] px-4 py-2 text-left leading-snug disabled:opacity-50">
                 {q}
               </button>
             </li>
@@ -330,19 +330,19 @@ export default function GuidePage() {
         </ul>
       </div>
 
-      <div className="flex h-[min(76vh,780px)] min-h-[460px] flex-col rounded-[10px] border border-[var(--rule)] bg-card">
-        <div className="flex items-center justify-between gap-3 border-b border-[var(--rule)] px-5 py-3">
+      <div className="tray flex h-[min(76vh,780px)] min-h-[460px] flex-col">
+        <div className="flex items-center justify-between gap-3 px-4 pb-2.5 pt-2">
           <p className="text-[0.875rem] text-ink-muted" aria-live="polite">
             {sending ? "Answering…" : asked ? `${asked} ${asked === 1 ? "question" : "questions"} so far` : "No questions yet"}
           </p>
           {messages.length ? (
-            <button type="button" onClick={reset} className="text-[0.875rem] text-ink-secondary underline decoration-[var(--rule)] underline-offset-4 hover:text-ink-primary">
+            <button type="button" onClick={reset} className="chip px-3 py-1 text-[0.8125rem]">
               Start over
             </button>
           ) : null}
         </div>
 
-        <div ref={scrollRef} onScroll={onScroll} className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-6">
+        <div ref={scrollRef} onScroll={onScroll} className="raised min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-6">
           {messages.length === 0 ? (
             <p className="t-body max-w-[46ch]">
               Ask a question, or pick one to start.
@@ -358,12 +358,12 @@ export default function GuidePage() {
             e.preventDefault();
             send();
           }}
-          className="border-t border-[var(--rule)] px-5 py-4"
+          className="px-1 pb-1 pt-2"
         >
           <label htmlFor="guide-input" className="sr-only">
             Your question
           </label>
-          <div className="flex items-end gap-3">
+          <div className="flex items-end gap-2">
             <textarea
               id="guide-input"
               ref={textareaRef}
@@ -372,19 +372,23 @@ export default function GuidePage() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={onKeyDown}
               placeholder="Ask about the project"
-              className="field-input max-h-[168px] min-h-[36px] flex-1 resize-none leading-relaxed placeholder:text-ink-muted"
+              className="field-input !h-auto max-h-[168px] min-h-[44px] flex-1 resize-none rounded-[22px] px-4 py-2.5 leading-relaxed placeholder:text-ink-muted"
             />
             {sending ? (
-              <button type="button" onClick={stop} className="btn btn-secondary shrink-0">
-                Stop
+              <button type="button" onClick={stop} aria-label="Stop" className="btn btn-secondary h-11 w-11 shrink-0 justify-center !p-0">
+                <svg viewBox="0 0 20 20" className="h-3.5 w-3.5" aria-hidden>
+                  <rect x="4" y="4" width="12" height="12" rx="2.5" fill="currentColor" />
+                </svg>
               </button>
             ) : (
-              <button type="submit" disabled={!input.trim()} className="btn btn-primary shrink-0 disabled:opacity-40">
-                Ask
+              <button type="submit" disabled={!input.trim()} aria-label="Ask" className="btn btn-primary h-11 w-11 shrink-0 justify-center !p-0 disabled:opacity-40">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden>
+                  <path d="M10 16V4M5 9l5-5 5 5" />
+                </svg>
               </button>
             )}
           </div>
-          <p className="t-small mt-2">Enter to send, Shift+Enter for a new line</p>
+          <p className="t-small mt-2 pl-4">Enter to send, Shift+Enter for a new line</p>
         </form>
       </div>
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { NumberField, SelectField, SliderField, Checkbox } from "../components/Fields.jsx";
+import { NumberField, SelectField, SliderField, Toggle } from "../components/Fields.jsx";
 import EstimatePanel from "../components/EstimatePanel.jsx";
 import DistributionChart from "../components/DistributionChart.jsx";
 import FactorChart from "../components/FactorChart.jsx";
@@ -117,7 +117,7 @@ export default function PreapprovalPage() {
   const set = (key) => (value) => setForm((f) => ({ ...f, [key]: value }));
   const err = (key) => errors[key];
   const activePreset = Object.keys(PRESETS).find((name) => presetIsActive(form, PRESETS[name]));
-  // the dark pill behind the chosen example glides between buttons
+  // the raised thumb behind the chosen example glides between buttons
   const examplesRef = useRef(null);
   const pill = useIndicator(examplesRef, activePreset ?? "none");
 
@@ -128,7 +128,7 @@ export default function PreapprovalPage() {
   );
 
   return (
-    <div className="grid grid-cols-1 gap-x-16 lg:grid-cols-[minmax(0,1fr)_21rem]">
+    <div className="grid grid-cols-1 gap-x-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="min-w-0">
         <h1 className="t-h1">Check a preapproval</h1>
         <p className="t-lead mt-3">
@@ -145,11 +145,11 @@ export default function PreapprovalPage() {
             ref={examplesRef}
             role="group"
             aria-labelledby="examples-label"
-            className="relative mt-2 grid w-full grid-cols-3 rounded-md border border-[var(--rule)] p-0.5 sm:inline-grid sm:w-auto"
+            className="seg-track relative mt-2 grid w-full grid-cols-3 sm:inline-grid sm:w-auto"
           >
             <span
               aria-hidden
-              className="absolute rounded-[4px] bg-ink-primary"
+              className="seg-thumb absolute"
               style={{
                 left: pill?.left ?? 0,
                 top: pill?.top ?? 0,
@@ -169,13 +169,13 @@ export default function PreapprovalPage() {
                   aria-pressed={active}
                   data-active={active}
                   onClick={() => setForm((f) => ({ ...f, ...PRESETS[name] }))}
-                  className={`relative flex items-baseline justify-center gap-1.5 whitespace-nowrap rounded-[4px] px-2 py-1.5 text-[0.9375rem] transition-colors duration-300 sm:gap-2 sm:px-4 ${
-                    active ? "text-surface" : "text-ink-secondary hover:text-ink-primary"
+                  className={`relative flex items-baseline justify-center gap-1.5 whitespace-nowrap rounded-full px-2 py-2 text-[0.9375rem] transition-colors duration-300 sm:gap-2 sm:px-5 ${
+                    active ? "text-ink-primary" : "text-ink-secondary hover:text-ink-primary"
                   }`}
                 >
                   <span>{PRESET_INFO[name].short}</span>
                   {score ? (
-                    <span className={`t-num animate-fade-in text-[0.8125rem] transition-colors duration-300 ${active ? "opacity-80" : "text-ink-muted"}`}>
+                    <span className={`t-num animate-fade-in text-[0.8125rem] transition-colors duration-300 ${active ? "text-accent-text" : "text-ink-muted"}`}>
                       {(score.default_probability * 100).toFixed(1)}%
                     </span>
                   ) : null}
@@ -183,12 +183,12 @@ export default function PreapprovalPage() {
               );
             })}
           </div>
-          <p key={activePreset ?? "own"} className="t-small mt-2 min-h-[1.25rem] animate-fade-in">
+          <p key={activePreset ?? "own"} className="t-small mt-2 min-h-[1.25rem] animate-fade-in pl-1">
             {activePreset ? PRESET_INFO[activePreset].blurb : "Your own numbers."}
           </p>
         </div>
 
-        <form noValidate onSubmit={(e) => e.preventDefault()} className="mt-4">
+        <form noValidate onSubmit={(e) => e.preventDefault()} className="mt-6 space-y-3">
           <FormSection title="Income and loan" note="US dollars a month, before tax">
             <NumberField
               id="income"
@@ -234,10 +234,10 @@ export default function PreapprovalPage() {
               help="If the loan pays for something, like a phone. Leave at 0 for a cash loan."
             />
             <details className="group sm:col-span-2">
-              <summary className="t-small cursor-pointer list-none underline decoration-[var(--rule)] underline-offset-4 hover:text-ink-primary">
+              <summary className="t-small w-fit cursor-pointer list-none pl-1 underline decoration-[var(--rule)] underline-offset-4 hover:text-ink-primary">
                 Why dollars?
               </summary>
-              <p className="t-small mt-2 max-w-[62ch]">
+              <p className="t-small mt-2 max-w-[62ch] pl-1">
                 The data's currency is hidden, so dollars are scaled to put the typical applicant at
                 $4,300 a month. Inputs stay within what the model saw: about {usd(LIMITS.income.min)}{" "}
                 to {usd(LIMITS.income.max)} of monthly income and loans up to{" "}
@@ -248,10 +248,11 @@ export default function PreapprovalPage() {
 
           <FormSection title="About you">
             <NumberField id="ageYears" label="Age" min={LIMITS.ageYears.min} max={LIMITS.ageYears.max} value={form.ageYears} onChange={set("ageYears")} error={err("ageYears")} />
-            <NumberField id="children" label="Children" min={0} max={LIMITS.children.max} value={form.children} onChange={set("children")} error={err("children")} />
+            <NumberField id="children" label="Children" stepper min={0} max={LIMITS.children.max} value={form.children} onChange={set("children")} error={err("children")} />
             <NumberField
               id="familyMembers"
               label="People in household"
+              stepper
               min={1}
               max={LIMITS.familyMembers.max}
               value={form.familyMembers}
@@ -302,70 +303,77 @@ export default function PreapprovalPage() {
 
           <FormSection title="Credit bureau" note="Optional">
             <div className="sm:col-span-2">
-              <p className="t-body max-w-[62ch] text-[0.9375rem]">
+              <p className="t-body max-w-[62ch] pl-1 text-[0.9375rem]">
                 A lender would pull these for you. Without them the model assumes typical scores,
                 and the estimate gets much rougher.
               </p>
-              <div className="mt-5">
-                <Checkbox label="I know my credit bureau scores" checked={form.useExtScores} onChange={set("useExtScores")} />
-              </div>
-              <Reveal open={form.useExtScores}>
-                <div className="grid grid-cols-1 gap-6 pb-1 pt-5 sm:grid-cols-3">
-                  {["extScore1", "extScore2", "extScore3"].map((key, i) => (
-                    <SliderField
-                      key={key}
-                      id={key}
-                      label={`Bureau score ${i + 1}`}
-                      min={SCORE_MIN}
-                      max={SCORE_MAX}
-                      step={1}
-                      value={extToScore(form[key])}
-                      onChange={(v) => set(key)(scoreToExt(v))}
-                      format={(v) => String(Math.round(v))}
-                    />
-                  ))}
-                  <p className="t-small sm:col-span-3">
-                    On the usual {SCORE_MIN} to {SCORE_MAX} scale. Higher is safer: the top quarter missed
-                    payments about 3.5% of the time, the bottom quarter about 14%.
-                  </p>
-                </div>
-              </Reveal>
-              <div className="mt-5">
-                <Checkbox label="I have a credit card" checked={form.useCc} onChange={set("useCc")} />
-              </div>
-              <Reveal open={form.useCc}>
-                <div className="max-w-sm pb-1 pt-5">
-                  <SliderField
-                    id="ccUtilization"
-                    label="Card limit used"
-                    min={0}
-                    max={2}
-                    step={0.01}
-                    value={form.ccUtilization}
-                    onChange={set("ccUtilization")}
-                    format={(v) => `${Math.round(v * 100)}%`}
-                    help="Balance divided by limit. Over 100% means over the limit. On its own it barely moves the estimate."
+              <div className="raised mt-4 divide-y divide-[var(--border)] px-5">
+                <div className="py-4">
+                  <Toggle
+                    label="I know my credit bureau scores"
+                    description="Three scores from different bureaus"
+                    checked={form.useExtScores}
+                    onChange={set("useExtScores")}
                   />
+                  <Reveal open={form.useExtScores}>
+                    <div className="grid grid-cols-1 gap-6 pb-1 pt-5 sm:grid-cols-3">
+                      {["extScore1", "extScore2", "extScore3"].map((key, i) => (
+                        <SliderField
+                          key={key}
+                          id={key}
+                          label={`Bureau score ${i + 1}`}
+                          min={SCORE_MIN}
+                          max={SCORE_MAX}
+                          step={1}
+                          value={extToScore(form[key])}
+                          onChange={(v) => set(key)(scoreToExt(v))}
+                          format={(v) => String(Math.round(v))}
+                        />
+                      ))}
+                      <p className="t-small sm:col-span-3">
+                        On the usual {SCORE_MIN} to {SCORE_MAX} scale. Higher is safer: the top quarter missed
+                        payments about 3.5% of the time, the bottom quarter about 14%.
+                      </p>
+                    </div>
+                  </Reveal>
                 </div>
-              </Reveal>
+                <div className="py-4">
+                  <Toggle label="I have a credit card" description="How much of the limit is in use" checked={form.useCc} onChange={set("useCc")} />
+                  <Reveal open={form.useCc}>
+                    <div className="max-w-sm pb-1 pt-5">
+                      <SliderField
+                        id="ccUtilization"
+                        label="Card limit used"
+                        min={0}
+                        max={2}
+                        step={0.01}
+                        value={form.ccUtilization}
+                        onChange={set("ccUtilization")}
+                        format={(v) => `${Math.round(v * 100)}%`}
+                        help="Balance divided by limit. Over 100% means over the limit. On its own it barely moves the estimate."
+                      />
+                    </div>
+                  </Reveal>
+                </div>
+              </div>
             </div>
           </FormSection>
         </form>
 
         {/* on a phone the estimate sits here, after the form; a bar along the bottom keeps
             the number in view until it does */}
-        <div id="estimate" className="mt-10 scroll-mt-6 lg:hidden">
+        <div id="estimate" className="mt-3 scroll-mt-36 lg:hidden">
           <MobileEstimate panel={panel("estimate-inline")} result={result} state={state} />
         </div>
 
         {result ? (
-          <section id="breakdown" aria-labelledby="breakdown-heading" className="section-rule mt-14 scroll-mt-6 pt-8">
-            <h2 id="breakdown-heading" className="t-h2">
+          <section id="breakdown" aria-labelledby="breakdown-heading" className="tray mt-8 scroll-mt-36 lg:scroll-mt-24">
+            <h2 id="breakdown-heading" className="t-h2 px-4 pb-2 pt-4">
               How it got there
             </h2>
 
             {distribution ? (
-              <div className="mt-6">
+              <div className="raised mt-2 p-5 sm:p-6">
                 <h3 className="t-h3">Compared with {distribution.n.toLocaleString()} real applicants</h3>
                 <p className="t-body mt-1 max-w-[62ch] text-[0.9375rem]">
                   Most people score low. The cutoff turns away {Math.round(DECLINE_RATE * 100)}% of
@@ -383,7 +391,7 @@ export default function PreapprovalPage() {
               </div>
             ) : null}
 
-            <div className="mt-10">
+            <div className="raised mt-2 p-5 sm:p-6">
               <h3 className="t-h3">What pushed it up or down</h3>
               <p className="t-body mt-1 max-w-[62ch] text-[0.9375rem]">
                 The {result.top_factors.length} biggest of {result.n_contributing || result.top_factors.length}{" "}
@@ -392,8 +400,8 @@ export default function PreapprovalPage() {
               <div className="mt-4">
                 <FactorChart factors={result.top_factors} />
               </div>
-              <p className="mt-4 text-[0.9375rem]">
-                <Link to="/guide" state={{ prefill: questionAbout(result) }} className="link">
+              <p className="mt-5">
+                <Link to="/guide" state={{ prefill: questionAbout(result) }} className="btn btn-primary">
                   Ask the research guide about these
                 </Link>
               </p>
@@ -401,7 +409,8 @@ export default function PreapprovalPage() {
           </section>
         ) : null}
 
-        <section aria-labelledby="model-heading" className="section-rule mt-14 pt-8">
+        <section aria-labelledby="model-heading" className="tray mt-3 p-2">
+          <div className="px-4 pb-4 pt-4">
           <h2 id="model-heading" className="t-h2">
             About the model
           </h2>
@@ -417,17 +426,19 @@ export default function PreapprovalPage() {
               Most of those borrowers still paid the loan off.
             </p>
           </div>
-          <table className="mt-5 w-full max-w-[34rem] text-left text-[0.9375rem]">
+          </div>
+          <div className="raised px-5 py-4">
+          <table className="w-full text-left text-[0.9375rem]">
             <caption className="t-small pb-2 text-left">
               How well each version tells risky applicants from safe ones (test AUC; 0.5 is a coin flip)
             </caption>
-            <tbody className="border-t border-[var(--rule)]">
+            <tbody>
               {[
                 ["Research model, with full credit history", MODEL_AUC],
                 ["This tool, with bureau scores", MODEL_AUC_FORM],
                 ["This tool, without bureau scores", MODEL_AUC_FORM_BLANK],
               ].map(([label, auc]) => (
-                <tr key={label} className="border-b border-[var(--border)]">
+                <tr key={label} className="border-t border-[var(--border)]">
                   <th scope="row" className="py-2 pr-4 font-normal text-ink-secondary">
                     {label}
                   </th>
@@ -436,11 +447,12 @@ export default function PreapprovalPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </section>
       </div>
 
       <aside className="hidden lg:block">
-        <div className="sticky top-6 pt-1">{panel("estimate-side")}</div>
+        <div className="sticky top-24">{panel("estimate-side")}</div>
       </aside>
     </div>
   );
@@ -465,14 +477,14 @@ function Reveal({ open, children }) {
 
 function FormSection({ title, note, children }) {
   return (
-    <fieldset className="section-rule mt-8 pt-6 first:mt-0">
+    <fieldset className="tray p-4 sm:p-6">
       <legend className="contents">
-        <span className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <span className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 pl-1">
           <span className="t-h2">{title}</span>
           {note ? <span className="t-small">{note}</span> : null}
         </span>
       </legend>
-      <div className="mt-5 grid grid-cols-1 gap-x-10 gap-y-6 sm:grid-cols-2">{children}</div>
+      <div className="mt-5 grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">{children}</div>
     </fieldset>
   );
 }
@@ -497,13 +509,16 @@ function MobileEstimate({ panel, result, state }) {
       {result && below ? (
         <a
           href="#estimate"
-          className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-3 border-t border-[var(--rule)] bg-card px-5 py-3 lg:hidden"
+          className="glass fixed inset-x-3 bottom-3 z-30 flex animate-fade-up items-center justify-between gap-3 rounded-full py-2.5 pl-5 pr-2.5 lg:hidden"
         >
-          <span className="flex items-baseline gap-2">
+          <span className="flex items-center gap-2">
             <span className="t-num text-[1.25rem] text-ink-primary">{(result.default_probability * 100).toFixed(1)}%</span>
-            <span className="text-[0.875rem] text-ink-secondary">chance of a missed payment</span>
+            <span className="text-[0.8125rem] leading-tight text-ink-secondary">chance of a missed payment</span>
           </span>
-          <span className="text-[0.875rem] font-[650]" style={{ color: good ? "var(--good-text)" : "var(--critical-text)" }}>
+          <span
+            className="rounded-full px-3 py-1.5 text-[0.8125rem] font-[650] text-[#fffdf9]"
+            style={{ background: state === "invalid" ? "var(--ink-muted)" : good ? "var(--good-text)" : "var(--critical-text)" }}
+          >
             {state === "invalid" ? "Check form" : good ? "Preapproved" : "Declined"}
           </span>
         </a>

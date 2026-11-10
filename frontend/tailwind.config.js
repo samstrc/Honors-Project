@@ -19,6 +19,7 @@ export default {
       colors: {
         surface: "var(--surface)",
         card: "var(--card)",
+        tray: "var(--tray)",
         ink: {
           primary: "var(--ink-primary)",
           secondary: "var(--ink-secondary)",
@@ -49,6 +50,12 @@ export default {
           "0%": { opacity: 0, transform: "translateY(8px)" },
           "100%": { opacity: 1, transform: "translateY(0)" },
         },
+        // Played with fill-mode backwards, so nothing is left on the wrapper once it ends:
+        // any transform there would trap the phone's fixed estimate bar inside the page.
+        "page-in": {
+          "0%": { opacity: 0, transform: "translateY(8px)" },
+          "100%": { opacity: 1, transform: "none" },
+        },
         "fade-in": {
           "0%": { opacity: 0 },
           "100%": { opacity: 1 },
@@ -72,7 +79,7 @@ export default {
       },
       animation: {
         "fade-up": "fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both",
-        "page-in": "fade-up 0.55s cubic-bezier(0.16, 1, 0.3, 1) both",
+        "page-in": "page-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) backwards",
         "fade-in": "fade-in 0.4s ease both",
         "tip-in": "fade-in 0.12s ease both",
         caret: "caret 1s steps(2, start) infinite",

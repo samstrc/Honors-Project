@@ -53,10 +53,10 @@ export default function RateBarChart({ rows, pctKey = "rate", average, max: shar
                   {r.band}
                 </th>
                 <td className="relative py-[5px] align-middle">
-                  <div className="relative h-4">
+                  <div className="relative h-[18px]">
                     <div
                       data-bar
-                      className="absolute inset-y-0 left-0 rounded-r-[2px] group-hover:brightness-110"
+                      className="absolute inset-y-0 left-0 rounded-full group-hover:brightness-110"
                       style={{
                         width: inView ? `${(val / max) * 100}%` : "0%",
                         background: above ? "var(--cat-2)" : "var(--cat-1)",

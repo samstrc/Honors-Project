@@ -10,16 +10,20 @@
 
   The fills (--good, --critical, --accent, --cat-*) are for bars, dots and marks. Text in
   a status colour uses the *-text variant, which clears 4.5:1 on both surfaces.
+
+  Surfaces stack in three steps: the page (--surface), a tray that groups one subject
+  (--tray), and a raised card inside it (--card). Muted text clears 4.5:1 on all three.
 */
 :root {
-  --surface: #f2ede6;
-  --card: #fbf8f3;
+  --surface: #f4efe8;
+  --tray: #ebe4d9;
+  --card: #fffdf9;
   --ink-primary: #2e2a24;
   --ink-secondary: #575044;
-  --ink-muted: #71685b;
-  --border: rgba(46, 42, 36, 0.13);
-  --rule: rgba(46, 42, 36, 0.22);
-  --gridline: #ded4c5;
+  --ink-muted: #6b6255;
+  --border: rgba(46, 42, 36, 0.1);
+  --rule: rgba(46, 42, 36, 0.18);
+  --gridline: #e4dccf;
   --cat-1: #4d975e;
   --cat-2: #925612;
   --cat-3: #2f5b98;
@@ -36,18 +40,23 @@
   --focus: #925612;
   /* bars in the findings charts: one neutral ink, red only where the rate is above average */
   --bar: #a39785;
+  --shadow-raised: 0 1px 2px rgba(46, 42, 36, 0.06), 0 6px 18px -8px rgba(46, 42, 36, 0.16);
+  --glass-tint: rgba(255, 253, 249, 0.62);
+  --glass-edge: rgba(255, 255, 255, 0.75);
+  --glass-shine: rgba(255, 255, 255, 0.55);
   color-scheme: light;
 }
 
 html.dark {
-  --surface: #1e1b17;
-  --card: #272319;
+  --surface: #191613;
+  --tray: #24201a;
+  --card: #302a22;
   --ink-primary: #f4efe6;
   --ink-secondary: #c8c0b1;
-  --ink-muted: #9a9184;
-  --border: rgba(244, 239, 230, 0.13);
-  --rule: rgba(244, 239, 230, 0.22);
-  --gridline: #3a352d;
+  --ink-muted: #a0978a;
+  --border: rgba(244, 239, 230, 0.1);
+  --rule: rgba(244, 239, 230, 0.18);
+  --gridline: #3d372e;
   --cat-1: #4d975e;
   --cat-2: #985c1c;
   --cat-3: #3e6aa7;
@@ -63,6 +72,10 @@ html.dark {
   --accent-text: #c48a4a;
   --focus: #c48a4a;
   --bar: #6c6457;
+  --shadow-raised: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 8px 22px -10px rgba(0, 0, 0, 0.6);
+  --glass-tint: rgba(48, 42, 34, 0.5);
+  --glass-edge: rgba(255, 245, 230, 0.16);
+  --glass-shine: rgba(255, 245, 230, 0.1);
   color-scheme: dark;
 }
 
@@ -119,6 +132,111 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--ink-muted);
+}
+
+/* Surfaces -----------------------------------------------------------------------
+   A tray groups one subject; cards sit inside it with an 8px gutter, so the radii stay
+   concentric (28 = 20 + 8). Glass is kept for the things that float over the page (the
+   nav, the phone's estimate bar), where seeing the page through them is the point. */
+@layer components {
+  .tray {
+    background: var(--tray);
+    border-radius: 28px;
+    padding: 8px;
+  }
+  .raised {
+    background: var(--card);
+    border-radius: 20px;
+    box-shadow: var(--shadow-raised);
+  }
+
+  /* Liquid glass: the page blurs and saturates behind a thin tint, a bright rim catches
+     the light along the top edge, and a soft shadow lifts it off the page. */
+  .glass {
+    background-color: var(--glass-tint);
+    background-image: linear-gradient(180deg, var(--glass-shine), transparent 55%);
+    -webkit-backdrop-filter: blur(22px) saturate(180%);
+    backdrop-filter: blur(22px) saturate(180%);
+    border: 1px solid var(--glass-edge);
+    box-shadow:
+      inset 0 1px 0 var(--glass-edge),
+      inset 0 -1px 0 color-mix(in srgb, var(--glass-edge) 35%, transparent),
+      0 10px 34px -14px rgba(30, 27, 23, 0.35);
+  }
+  /* The sliding thumb in a glass bar: a smaller, clearer drop of the same material. */
+  .glass-lens {
+    background-color: color-mix(in srgb, var(--card) 78%, transparent);
+    background-image: linear-gradient(180deg, var(--glass-shine), transparent 70%);
+    border: 1px solid var(--glass-edge);
+    box-shadow: inset 0 1px 0 var(--glass-edge), 0 4px 14px -6px rgba(30, 27, 23, 0.3);
+  }
+
+  /* A dark tile for the one number on a page that matters most. It keeps its own dark
+     tokens in both themes, so everything inside reads the same either way. */
+  .ink-card {
+    --ink-primary: #f6f1e8;
+    --ink-secondary: #cfc7b8;
+    --ink-muted: #a89e8f;
+    --good-text: #79bb89;
+    --critical-text: #dd968f;
+    --gridline: rgba(246, 241, 232, 0.14);
+    --rule: rgba(246, 241, 232, 0.16);
+    /* fills brightened just enough to stand off the dark tile */
+    --good: #5aa86b;
+    --critical: #c0625c;
+    --focus: #d29b5c;
+    background: #2e2a24;
+    color: var(--ink-primary);
+    border-radius: 20px;
+    box-shadow: 0 12px 30px -14px rgba(30, 27, 23, 0.55);
+  }
+  html.dark .ink-card {
+    background: #3b342a;
+    box-shadow: inset 0 1px 0 rgba(255, 245, 230, 0.06), 0 12px 30px -14px rgba(0, 0, 0, 0.7);
+  }
+
+  /* Segmented control: a recessed track with a raised thumb that slides to the choice. */
+  .seg-track {
+    background: color-mix(in srgb, var(--ink-primary) 7%, transparent);
+    border-radius: 999px;
+    padding: 4px;
+  }
+  .seg-thumb {
+    background: var(--card);
+    border-radius: 999px;
+    box-shadow: 0 1px 2px rgba(30, 27, 23, 0.1), 0 3px 10px -4px rgba(30, 27, 23, 0.2);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border-radius: 999px;
+    background: var(--card);
+    box-shadow: var(--shadow-raised);
+    padding: 0.4rem 0.85rem;
+    font-size: 0.875rem;
+    color: var(--ink-primary);
+    transition: transform 160ms ease, box-shadow 160ms ease;
+  }
+  .chip:hover {
+    transform: translateY(-1px);
+  }
+}
+
+/* Anything that can't blur, or whose owner asked for less transparency, gets the solid
+   card colour instead, so text over it never loses contrast. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background-color: var(--card);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background-color: var(--card);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 /* Type -------------------------------------------------------------------------
@@ -190,26 +308,27 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    border-radius: 6px;
-    padding: 0.55rem 1rem;
+    border-radius: 999px;
+    padding: 0.6rem 1.15rem;
     font-size: 0.9375rem;
     font-weight: 600;
     line-height: 1.3;
-    transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+    transition: background-color 150ms ease, color 150ms ease, transform 160ms ease;
+  }
+  .btn:active {
+    transform: scale(0.97);
   }
   .btn-primary {
-    background: var(--accent);
-    color: var(--card);
+    background: var(--ink-primary);
+    color: var(--surface);
   }
   .btn-primary:hover {
-    background: color-mix(in srgb, var(--accent) 88%, var(--ink-primary));
+    background: color-mix(in srgb, var(--ink-primary) 86%, var(--surface));
   }
   .btn-secondary {
-    border: 1px solid var(--rule);
+    background: var(--card);
+    box-shadow: var(--shadow-raised);
     color: var(--ink-primary);
-  }
-  .btn-secondary:hover {
-    border-color: var(--ink-muted);
   }
 
   /* A section opens with a thin rule instead of sitting in a box. */
@@ -231,33 +350,33 @@ body {
 /* Form controls -------------------------------------------------------------- */
 
 @layer components {
-/* Inputs are an underline, not a box: the form reads as one sheet. The line is
-   ink-muted (4.7:1) so the field edge is still clear, and focus thickens it in the
-   accent colour on top of the standard focus ring. */
+/* Inputs are raised pills on the tray, like the cards around them. The edge is a hairline
+   that darkens on hover; focus adds an accent ring on top of the standard outline. */
 .field-input {
   width: 100%;
-  border: 0;
-  border-bottom: 1.5px solid var(--ink-muted);
-  border-radius: 0;
-  background: transparent;
-  padding: 0.4rem 0 0.45rem;
+  height: 2.75rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: var(--shadow-raised);
+  padding: 0 1rem;
   font-size: 1rem;
   color: var(--ink-primary);
   outline: none;
   transition: border-color 150ms ease, box-shadow 150ms ease, opacity 300ms ease;
 }
 .field-input:hover {
-  border-bottom-color: var(--ink-secondary);
+  border-color: var(--rule);
 }
 .field-input:focus {
-  border-bottom-color: var(--accent);
-  box-shadow: 0 1.5px 0 0 var(--accent);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-raised), 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
 }
 .field-input:focus-visible {
   outline: none;
 }
 .field-input[aria-invalid="true"] {
-  border-bottom-color: var(--critical);
+  border-color: var(--critical);
 }
 .field-input:disabled {
   opacity: 0.45;
@@ -265,10 +384,10 @@ body {
 }
 select.field-input {
   appearance: none;
-  padding-right: 1.5rem;
+  padding-right: 2.5rem;
   background-repeat: no-repeat;
   background-size: 14px;
-  background-position: right 0 center;
+  background-position: right 1rem center;
   cursor: pointer;
 }
 select.field-input option {
@@ -282,49 +401,40 @@ select.field-input option {
    because range inputs can't be styled otherwise. */
 .slider {
   --pct: 50%;
-  height: 4px;
+  height: 8px;
   border-radius: 999px;
-  background: linear-gradient(to right, var(--accent) var(--pct), var(--gridline) var(--pct));
+  background: linear-gradient(to right, var(--good) var(--pct), color-mix(in srgb, var(--ink-primary) 10%, transparent) var(--pct));
   appearance: none;
   -webkit-appearance: none;
   cursor: pointer;
 }
 .slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  height: 18px;
-  width: 18px;
+  height: 22px;
+  width: 22px;
   border-radius: 999px;
-  background: var(--card);
-  border: 2px solid var(--accent);
+  background: #fffdf9;
+  box-shadow: 0 0 0 1px rgba(30, 27, 23, 0.08), 0 2px 8px rgba(30, 27, 23, 0.28);
   transition: transform 140ms ease;
 }
 .slider::-moz-range-thumb {
-  height: 18px;
-  width: 18px;
+  height: 22px;
+  width: 22px;
+  border: 0;
   border-radius: 999px;
-  background: var(--card);
-  border: 2px solid var(--accent);
+  background: #fffdf9;
+  box-shadow: 0 0 0 1px rgba(30, 27, 23, 0.08), 0 2px 8px rgba(30, 27, 23, 0.28);
   transition: transform 140ms ease;
 }
 .slider:active::-webkit-slider-thumb {
-  transform: scale(1.15);
+  transform: scale(1.12);
 }
 .slider:active::-moz-range-thumb {
-  transform: scale(1.15);
+  transform: scale(1.12);
 }
 .slider:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 6px;
-}
-
-/* Checkbox tick draws itself in. */
-.tick {
-  stroke-dasharray: 14;
-  stroke-dashoffset: 14;
-  transition: stroke-dashoffset 200ms ease 40ms;
-}
-.tick.on {
-  stroke-dashoffset: 0;
 }
 
 /* Anyone who has asked their OS for less motion gets it. */

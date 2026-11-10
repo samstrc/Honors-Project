@@ -9,28 +9,31 @@ const pct = (rate, digits = 1) => `${(rate * 100).toFixed(digits)}%`;
 const oneIn = (rate) => `1 in ${Math.round(1 / rate)}`;
 const find = (rows, band) => rows.find((r) => r.band === band);
 
-/** The headline multiple, counting up the first time it's seen. */
-function CountUp({ value }) {
+/** The headline multiple on a dark tile, counting up the first time it's seen. */
+function CountUp({ value, caption }) {
   const [ref, inView] = useInView(0.6);
   const shown = useCountUp(value, inView, 1100);
   return (
-    <p ref={ref} className="t-num !text-[2.25rem] leading-none text-ink-primary" aria-label={`${value.toFixed(1)} times`}>
-      {shown.toFixed(1)}×
-    </p>
+    <div ref={ref} className="ink-card inline-flex flex-col px-5 py-4">
+      <p className="t-num text-[2.5rem] leading-none" aria-label={`${value.toFixed(1)} times`}>
+        {shown.toFixed(1)}×
+      </p>
+      <p className="mt-1.5 text-[0.8125rem] text-ink-secondary">{caption}</p>
+    </div>
   );
 }
 
-/** One finding: the claim and its evidence on the left, the chart on the right. */
+/** One finding: a tray with the claim and its evidence on it, and the chart on a card. */
 function Finding({ id, title, children, chart }) {
   return (
-    <section aria-labelledby={id} className="section-rule grid grid-cols-1 gap-x-14 gap-y-6 py-10 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)]">
-      <div>
+    <section aria-labelledby={id} className="tray grid grid-cols-1 gap-2 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)]">
+      <div className="px-4 pb-3 pt-4 lg:pb-4 lg:pr-6">
         <h2 id={id} className="t-h2">
           {title}
         </h2>
         <div className="t-body mt-3 space-y-3">{children}</div>
       </div>
-      <div className="min-w-0 lg:pt-1">{chart}</div>
+      <div className="raised flex min-w-0 flex-col justify-center p-5 sm:p-6">{chart}</div>
     </section>
   );
 }
@@ -55,7 +58,7 @@ export default function FindingsPage() {
 
   return (
     <div>
-      <div className="grid grid-cols-1 items-start gap-8 sm:grid-cols-[minmax(0,1fr)_auto]">
+      <div className="grid grid-cols-1 items-center gap-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-10">
         <div>
           <h1 className="t-h1">What the data says</h1>
           <p className="t-lead mt-3">
@@ -65,14 +68,20 @@ export default function FindingsPage() {
           </p>
           <p className="t-small mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
             <span className="flex items-center gap-1.5">
-              <span aria-hidden className="h-2.5 w-2.5 rounded-[2px] bg-[var(--cat-2)]" /> above the 8.1% average
+              <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-[var(--cat-2)]" /> above the 8.1% average
             </span>
             <span className="flex items-center gap-1.5">
-              <span aria-hidden className="h-2.5 w-2.5 rounded-[2px] bg-[var(--cat-1)]" /> at or below it
+              <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-[var(--cat-1)]" /> at or below it
             </span>
           </p>
         </div>
-        {S ? <Waffle count={Math.round(S.miss_rate * 100)} label={`${Math.round(S.miss_rate * 100)} in 100 applicants missed an early payment`} /> : null}
+        {S ? (
+          <div className="tray w-fit">
+            <div className="raised px-5 py-5">
+              <Waffle count={Math.round(S.miss_rate * 100)} label={`${Math.round(S.miss_rate * 100)} in 100 applicants missed an early payment`} />
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {error ? (
@@ -103,13 +112,13 @@ function Findings({ S }) {
   const dsrOver = S.by_dsr[S.by_dsr.length - 1];
 
   return (
-    <div className="mt-12">
+    <div className="mt-10 space-y-3">
       <Finding
         id="f-bureau"
         title="Credit scores matter most"
         chart={<RateBarChart rows={S.by_ext_score} average={avg} labelWidth="5.5rem" />}
       >
-        <CountUp value={lo / hi} />
+        <CountUp value={lo / hi} caption="riskier in the lowest fifth than the highest" />
         <p>
           Each applicant has up to three scores from credit bureaus. In the lowest fifth,{" "}
           {oneIn(lo)} missed a payment. In the highest, {oneIn(hi)}.
@@ -191,17 +200,17 @@ function Findings({ S }) {
         <p className="t-small">From earlier loans that recorded what was bought.</p>
       </Finding>
 
-      <section aria-labelledby="f-data" className="section-rule grid grid-cols-1 gap-x-14 gap-y-6 pt-10 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)]">
-        <h2 id="f-data" className="t-h2">
+      <section aria-labelledby="f-data" className="tray grid grid-cols-1 gap-2 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)]">
+        <h2 id="f-data" className="t-h2 px-4 pb-3 pt-4">
           About the data
         </h2>
-        <div className="t-body max-w-[62ch] space-y-4">
-          <p>
+        <div className="raised t-body space-y-4 p-5 sm:p-6">
+          <p className="max-w-[62ch]">
             Home Credit's public Default Risk dataset on Kaggle. Home Credit lends to consumers in
             Central and Eastern Europe and Asia. Each row is one application, plus the applicant's
             credit history at the time.
           </p>
-          <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-[0.9375rem]">
+          <dl className="grid max-w-[62ch] grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-[0.9375rem]">
             <dt className="text-ink-muted">Applications</dt>
             <dd className="text-ink-primary">{S.n.toLocaleString()}, one row each</dd>
             <dt className="text-ink-muted">History tables</dt>
@@ -213,8 +222,8 @@ function Findings({ S }) {
             <dt className="text-ink-muted">Missed payment</dt>
             <dd className="text-ink-primary">One of the first few payments, more than a few days late</dd>
           </dl>
-          <p>
-            <Link to="/preapproval" className="link">
+          <p className="pt-1">
+            <Link to="/preapproval" className="btn btn-primary">
               Try the preapproval tool
             </Link>
           </p>

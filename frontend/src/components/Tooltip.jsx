@@ -87,7 +87,7 @@ function TooltipLayer({ rect, content }) {
     <div
       ref={ref}
       role="tooltip"
-      className={`pointer-events-none fixed z-50 max-w-[min(18rem,calc(100vw-16px))] rounded-lg border border-border bg-card px-2.5 py-1.5 text-[0.74rem] leading-snug text-ink-secondary shadow-tip ${
+      className={`pointer-events-none fixed z-50 max-w-[min(18rem,calc(100vw-16px))] ink-card !rounded-xl px-3 py-2 text-[0.75rem] leading-snug text-ink-secondary ${
         pos ? "animate-tip-in" : "invisible"
       }`}
       style={{ top: pos?.top ?? 0, left: pos?.left ?? 0 }}
@@ -96,12 +96,12 @@ function TooltipLayer({ rect, content }) {
       {pos ? (
         <span
           aria-hidden
-          className="absolute h-[7px] w-[7px] rotate-45 border-border bg-card"
+          className="absolute h-[7px] w-[7px] rotate-45 [background:inherit]"
           style={{
             left: pos.arrowX - ARROW / 2,
             ...(pos.placement === "top"
-              ? { bottom: -ARROW / 2 - 0.5, borderRightWidth: 1, borderBottomWidth: 1 }
-              : { top: -ARROW / 2 - 0.5, borderLeftWidth: 1, borderTopWidth: 1 }),
+              ? { bottom: -ARROW / 2 - 0.5 }
+              : { top: -ARROW / 2 - 0.5 }),
           }}
         />
       ) : null}

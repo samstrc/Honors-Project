@@ -14,7 +14,7 @@ export default function FactorChart({ factors }) {
   const [ref, inView] = useInView();
 
   return (
-    <ul ref={ref} className="divide-y divide-[var(--border)] border-y border-[var(--rule)]">
+    <ul ref={ref} className="divide-y divide-[var(--border)]">
       {sorted.map((f, i) => {
         const up = f.contribution > 0;
         const half = (Math.abs(f.contribution) / maxAbs) * 50;
@@ -31,7 +31,7 @@ export default function FactorChart({ factors }) {
             <span className="relative col-span-2 h-3 sm:col-span-1" aria-hidden>
               <span className="absolute inset-y-[-3px] left-1/2 w-px bg-[var(--rule)]" />
               <span
-                className="absolute inset-y-0 rounded-[2px]"
+                className="absolute inset-y-0 rounded-full"
                 style={{
                   width: inView ? `${half}%` : "0%",
                   transition: `width 800ms ${EASE} ${inView ? i * 60 : 0}ms`,
