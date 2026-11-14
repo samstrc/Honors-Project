@@ -83,10 +83,13 @@ export const PRESETS = {
     useCc: true,
     ccUtilization: 0.1,
   },
+  // A real test-set applicant whose answers all sit near the typical working applicant's
+  // (median income and item price, 43, five and a half years in the job) and whose risk,
+  // scored without bureau scores, is close to the median for that case.
   "Typical applicant": {
-    income: 4380.0,
-    creditAmount: 14990.0,
-    annuity: 730.0,
+    income: 3940.0,
+    creditAmount: 13150.0,
+    annuity: 760.0,
     goodsPrice: 13150.0,
     ageYears: 43,
     children: 0,
@@ -94,7 +97,7 @@ export const PRESETS = {
     education: "Secondary / secondary special",
     incomeType: "Working",
     occupation: "",
-    yearsEmployed: 4.5,
+    yearsEmployed: 5.5,
     useExtScores: false,
     extScore1: 0.5,
     extScore2: 0.5,

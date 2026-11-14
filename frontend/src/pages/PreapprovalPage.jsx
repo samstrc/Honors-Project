@@ -33,7 +33,7 @@ import {
 // The examples, by the short name on their button and the one line said about them.
 const PRESET_INFO = {
   "Strong applicant": { short: "Strong", blurb: "Well paid, small loan, 15 years in the job, good scores." },
-  "Typical applicant": { short: "Typical", blurb: "The median borrower. No bureau scores." },
+  "Typical applicant": { short: "Typical", blurb: "A real applicant with typical answers. No bureau scores." },
   "High-risk applicant": { short: "High-risk", blurb: "21, unemployed, borrowing a lot, card over its limit." },
 };
 const presetIsActive = (form, preset) => Object.keys(preset).every((k) => form[k] === preset[k]);
