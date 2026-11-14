@@ -15,7 +15,7 @@ Sources, roughly in order of how often they answer a question:
   3. Module docstrings from `modeling/features.py` and `backend/app/model/*.py` -- these carry the reasoning
      behind each decision, which is most of what the guide gets asked about.
   4. A hand-written project overview -- the framing no single file states outright.
-  5. The research paper, `paper/main.pdf`.
+  5. The research paper, `paper/main.pdf`, once `INDEX_PAPER` is switched on.
   6. Anything dropped in `documents/rag/` (.pdf, .md, .txt). Nothing else needs to change
      to pick it up; other file types are skipped, and the ingest says so.
 """
@@ -512,8 +512,14 @@ def _read_document(path: str) -> list[Document]:
     return []
 
 
+# The paper stays out of the index until it has been submitted. The index is committed to a
+# public repository and the guide quotes what it retrieves, so anything indexed is public.
+# Set this to True, then rebuild the index, once the paper can be shared.
+INDEX_PAPER = False
+
+
 def research_paper() -> list[Document]:
-    if not os.path.exists(PAPER_PDF):
+    if not INDEX_PAPER or not os.path.exists(PAPER_PDF):
         return []
     return _read_document(PAPER_PDF)
 

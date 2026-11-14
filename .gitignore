@@ -7,6 +7,9 @@ modeling/models/superseded/
 # documents/rag/ (what the guide indexes) and documents/other/ (personal paperwork)
 # stay local
 /documents/
+# The paper stays local until it's submitted. Nothing the site runs on reads it; the
+# guide's index is built from paper/main.pdf on this machine.
+/paper/
 
 # Secrets: OPENAI_API_KEY lives in backend/.env and is never committed
 .env
