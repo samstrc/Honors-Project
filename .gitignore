@@ -29,8 +29,6 @@ __pycache__/
 # Personal
 .Rhistory
 
-# Claude's generated chart previews
-claude_scripts/charts/
-
-# Pre-cleanup copies of the notebooks, safe to delete
-claude_scripts/notebooks_before_cleanup.zip
+# Local working files: assistant instructions and helper scripts
+/CLAUDE.md
+/claude_scripts/

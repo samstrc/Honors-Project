@@ -16,4 +16,3 @@ modeling/*.ipynb
 **/*.pyc
 **/.DS_Store
 *.jpeg
-claude_scripts/
