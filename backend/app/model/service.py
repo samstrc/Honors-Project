@@ -260,7 +260,6 @@ FEATURE_LABELS = {
     "EXT_SOURCES_MAX": "Bureau scores, highest",
     "EXT_SOURCES_WEIGHTED": "Bureau scores, weighted",
     "EXT_SOURCES_PROD": "Bureau scores, combined",
-    "EXT_SOURCES_STD": "Bureau scores, spread",
     "EXT_SOURCES_NAN_COUNT": "Missing bureau scores",
     "EXT_SOURCE_1_X_AGE": "Bureau score 1 with age",
     "EXT_SOURCE_2_X_AGE": "Bureau score 2 with age",
@@ -299,15 +298,11 @@ FEATURE_LABELS = {
 # COH_<group>_<value>_MEAN is the group's average; COH_<group>_<value>_Z is how far the
 # applicant sits from it.
 COHORT_GROUPS = {"ORG": "employer type", "OCC": "occupation", "EDU": "education",
-                 "INC": "income source", "GENDER_EDU": "sex and education"}
+                 "INC": "income source"}
 COHORT_VALUES = {"EXT_SOURCES_MEAN": "bureau score", "AMT_INCOME_TOTAL": "income",
                  "AMT_CREDIT": "loan amount", "AMT_ANNUITY": "monthly payment",
                  "CREDIT_INCOME_RATIO": "loan vs. income", "ANNUITY_INCOME_RATIO": "payment vs. income",
                  "DAYS_EMPLOYED": "time employed", "DAYS_BIRTH": "age"}
-
-AUX_SOURCES = (("BURO_", "Credit bureau"), ("PREV_", "Previous applications"),
-               ("INS_", "Installment history"), ("POS_", "POS/cash history"),
-               ("CC_", "Credit card history"), ("INSL_", "Prior loan history"))
 
 
 def _cohort_label(name: str) -> str | None:
@@ -329,9 +324,6 @@ def prettify(name: str) -> str:
         return FEATURE_LABELS[name]
     if name.startswith("COH_") and (label := _cohort_label(name)):
         return label
-    for prefix, source in AUX_SOURCES:
-        if name.startswith(prefix):
-            return f"{source}: {name[len(prefix):].replace('_', ' ').lower()}"
     return name.replace("_", " ").capitalize()
 
 

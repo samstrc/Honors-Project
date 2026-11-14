@@ -59,10 +59,9 @@ export const LIMITS = {
   workingAgeFrom: 15,
 };
 
-// The risk chart's scale, and the median score among real applicants
-// (frontend/public/data/risk_distribution.json, written by 03_train.ipynb)
+// The risk chart's scale (frontend/public/data/risk_distribution.json, written by
+// 03_train.ipynb)
 export const RISK_SCALE_MAX = 0.3;
-export const RISK_MEDIAN = 0.0500;
 
 export const PRESETS = {
   "Strong applicant": {

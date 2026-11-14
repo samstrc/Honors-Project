@@ -116,7 +116,7 @@ Rebuild the index after the write-up changes or a document lands in `documents/r
 
 ```bash
 cd backend
-python -m app.guide.ingest      # wipes and rebuilds db/chroma/ (--keep to add instead)
+python -m app.guide.ingest      # wipes and rebuilds db/chroma/
 python -m app.guide.chat        # a terminal session, for testing
 ```
 

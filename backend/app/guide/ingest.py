@@ -13,14 +13,13 @@ Chunks overlap. Splitting on a hard boundary with no overlap cuts sentences in h
 strands the context a chunk needs to stand on its own. 180 characters of overlap keeps a
 retrieved chunk from starting mid-argument.
 
-The rebuild is clean by default. An additive ingest against an existing collection
+The rebuild is always clean. An additive ingest against an existing collection
 duplicates every chunk, and the duplicates then crowd out real variety in the top-k.
-Wiping and rebuilding a 40k-character corpus takes a few seconds.
+Wiping and rebuilding the corpus takes a few seconds.
 """
 
 from __future__ import annotations
 
-import argparse
 import os
 import shutil
 
@@ -37,11 +36,6 @@ CHUNK_OVERLAP = 180
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--keep", action="store_true",
-                    help="append to the existing store instead of rebuilding it")
-    args = ap.parse_args()
-
     print("Building corpus:")
     docs = build_corpus()
     if not docs:
@@ -65,7 +59,7 @@ def main():
     for k, n in sorted(by_kind.items(), key=lambda kv: -kv[1]):
         print(f"  {k:<14} {n:>3} chunks")
 
-    if os.path.isdir(DB_DIR) and not args.keep:
+    if os.path.isdir(DB_DIR):
         print(f"\nremoving existing store at {DB_DIR}")
         shutil.rmtree(DB_DIR)
     os.makedirs(DB_DIR, exist_ok=True)

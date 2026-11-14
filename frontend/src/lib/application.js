@@ -28,19 +28,6 @@ export function buildPayload(form) {
   };
 }
 
-// Which tab each validated field lives on, so a failed submit can jump straight to it
-// instead of silently refusing (which is what the browser did when the offending input
-// was on a hidden tab).
-export const FIELD_TAB = {
-  income: 0,
-  annuity: 0,
-  creditAmount: 0,
-  goodsPrice: 0,
-  ageYears: 1,
-  children: 1,
-  familyMembers: 1,
-  yearsEmployed: 2,
-};
 export const FIELD_LABEL = {
   income: "Monthly income",
   annuity: "Monthly payment",
