@@ -15,8 +15,9 @@ Sources, roughly in order of how often they answer a question:
   3. Module docstrings from `modeling/features.py` and `backend/app/model/*.py` -- these carry the reasoning
      behind each decision, which is most of what the guide gets asked about.
   4. A hand-written project overview -- the framing no single file states outright.
-  5. Anything dropped in `documents/rag/` (.pdf, .md, .txt), which is where the research
-     paper goes once it exists. Nothing else needs to change to pick it up.
+  5. The research paper, `paper/main.pdf`.
+  6. Anything dropped in `documents/rag/` (.pdf, .md, .txt). Nothing else needs to change
+     to pick it up; other file types are skipped, and the ingest says so.
 """
 
 from __future__ import annotations
@@ -30,7 +31,7 @@ from langchain_core.documents import Document
 
 from ..paths import MODEL_NAME
 from ..paths import MODELING_DIR as MODELING
-from ..paths import MODELS_DIR
+from ..paths import MODELS_DIR, PAPER_PDF
 from ..paths import RAG_DOCS_DIR as DOCS
 from ..paths import RESULTS_DIR as RESULTS
 
@@ -55,12 +56,13 @@ Default Risk dataset from Kaggle.
 It does two things: builds a model that predicts whether a loan applicant will fail to
 repay, and serves that prediction through a preapproval tool someone can actually use.
 
-The notebook has four sections. It explores the data, then fits a first round of models,
-which reached 0.7786 test AUC. It then re-runs the problem as a controlled study, one
-change at a time, and reaches 0.7976 with the applicant's full credit history. The last
-part asks what a preapproval form can honestly deliver: it trains a model on the form's
-fields alone, without sex or marital status, which a FastAPI backend and a React site use
-to score an application, explain it, and place it against the population of real applicants.
+The work is in three notebooks. 01_eda explores the data. 02_research fits a first round
+of models, which reached 0.7786 test AUC, then re-runs the problem as a controlled study,
+one change at a time, and reaches 0.7976 with the applicant's full credit history. It ends
+by asking what a preapproval form can honestly deliver. 03_train trains the model the site
+serves on the form's fields alone, without sex or marital status, which a FastAPI backend
+and a React site use to score an application, explain it, and place it against the
+population of real applicants.
 
 The main finding is not the score. Two changes account for about 88% of the improvement,
 fixing a bug in early stopping and building better features, while hyperparameter search,
@@ -480,26 +482,39 @@ def module_docstrings() -> list[Document]:
 
 
 # ----------------------------------------------------------------------------------
+def _read_document(path: str) -> list[Document]:
+    """One file as Documents: a PDF page by page, so a citation can name the page."""
+    fn = os.path.basename(path)
+    if fn.lower().endswith(".pdf"):
+        from langchain_community.document_loaders import PyPDFLoader
+        pages = PyPDFLoader(path).load()
+        for p in pages:
+            p.metadata.update(source=fn, kind="paper",
+                              section=f"{fn} p.{p.metadata.get('page', 0) + 1}")
+        return pages
+    if fn.lower().endswith((".txt", ".md")):
+        return [Document(page_content=open(path).read(),
+                         metadata={"source": fn, "kind": "paper", "section": fn})]
+    print(f"  ! skipped {fn}: only .pdf, .md and .txt are read")
+    return []
+
+
+def research_paper() -> list[Document]:
+    if not os.path.exists(PAPER_PDF):
+        return []
+    return _read_document(PAPER_PDF)
+
+
 def dropped_in_docs() -> list[Document]:
-    """Whatever the user puts in documents/rag/ -- the research paper's future home."""
+    """Whatever the user puts in documents/rag/."""
     if not os.path.isdir(DOCS):
         return []
     out = []
     for fn in sorted(os.listdir(DOCS)):
-        path = os.path.join(DOCS, fn)
         if fn.startswith("."):
             continue
         try:
-            if fn.lower().endswith(".pdf"):
-                from langchain_community.document_loaders import PyPDFLoader
-                pages = PyPDFLoader(path).load()
-                for p in pages:
-                    p.metadata.update(source=fn, kind="paper",
-                                      section=f"{fn} p.{p.metadata.get('page', 0) + 1}")
-                out.extend(pages)
-            elif fn.lower().endswith((".txt", ".md")):
-                out.append(Document(page_content=open(path).read(),
-                                    metadata={"source": fn, "kind": "paper", "section": fn}))
+            out.extend(_read_document(os.path.join(DOCS, fn)))
         except Exception as e:  # a malformed drop-in should not kill the whole ingest
             print(f"  ! could not read {fn}: {type(e).__name__}: {e}")
     return out
@@ -515,6 +530,7 @@ def build_corpus(verbose: bool = True) -> list[Document]:
         "feature importances": feature_importances(),
         "deployment": deployment_notes(),
         "module docstrings": module_docstrings(),
+        "paper": research_paper(),
         "documents/rag": dropped_in_docs(),
     }
     docs = []

@@ -1,9 +1,8 @@
 """
 Chunk the corpus, embed it, and persist a Chroma vector store.
 
-Run this once to build the index, then again whenever the project changes or a new
-document lands in `documents/rag/`. Adding the research paper is just that: drop the PDF
-in and re-run.
+Run this once to build the index, then again whenever the project changes, the paper is
+rebuilt, or a new document lands in `documents/rag/`.
 
     cd backend && python -m app.guide.ingest
 

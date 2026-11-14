@@ -98,7 +98,7 @@ modeling/                 the model and everything that produces it
 
 data/                     the raw Kaggle competition files (10 CSVs, 2.5 GB, not in git)
 documents/                local only, not in git
-  rag/                              documents the research guide indexes (the paper goes here)
+  rag/                              extra notes the research guide indexes, beside paper/main.pdf
   other/                            personal paperwork, unrelated to the site
 Dockerfile, render.yaml   deployment
 ```
