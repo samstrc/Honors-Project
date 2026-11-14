@@ -208,13 +208,9 @@
     "CODE_GENDER",
     "NAME_FAMILY_STATUS"
   ],
-  "ext_source_medians": {
-    "EXT_SOURCE_1": 0.50560462474823,
-    "EXT_SOURCE_2": 0.5661762952804565,
-    "EXT_SOURCE_3": 0.5352762341499329
-  },
-  "test_auc": 0.7668981061533713,
-  "test_auc_scores_blank": 0.6680769365251472,
-  "test_avg_precision": 0.2549119094978885,
-  "n_estimators": 1879
+  "scores_hidden_share": 0.75,
+  "test_auc": 0.7668671378318838,
+  "test_auc_scores_blank": 0.7059890072611683,
+  "test_avg_precision": 0.2523184487884181,
+  "n_estimators": 1771
 }

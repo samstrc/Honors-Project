@@ -12,7 +12,8 @@ That model reads the applicant's whole credit history. **The preapproval site se
 different one**: trained only on what a form can ask, and without sex or marital status,
 which US lenders may not use. It scores 0.7669 test AUC on form answers, where the
 full-history model managed 0.749 (02_research.ipynb, section 3). That assumes the applicant
-enters bureau scores. With those left blank it scores 0.668 (03_train.ipynb, section 7).
+enters bureau scores. With those left blank it scores 0.706 (03_train.ipynb, section 7),
+because the model is trained with the scores hidden on 75% of its training rows.
 
 ## Running it
 

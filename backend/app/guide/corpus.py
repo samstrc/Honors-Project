@@ -327,7 +327,9 @@ def deployment_notes() -> list[Document]:
         return []
     final = load(os.path.join(RESULTS, "final_metrics.json")) or {}
     fair = load(os.path.join(RESULTS, "fairness_and_form.json"))
-    medians = schema.get("ext_source_medians", {})
+    hiding_table = "\n".join(
+        f"| {r['hidden share']:.0%} | {r['CV AUC']:.4f} | {r['CV AUC, scores blank']:.4f} |"
+        for r in load(os.path.join(RESULTS, "score_hiding.json")) or [])
     n_cohort = sum(c.startswith("COH_") for c in schema["features"])
 
     text = f"""
@@ -340,10 +342,27 @@ precision {schema.get('test_avg_precision', float('nan')):.4f}, {schema.get('n_e
 trees fitted on the full training split. It is trained without sex or marital status
 ({', '.join(schema.get('excluded', []))}).
 
-That AUC assumes the applicant enters the three bureau scores. When they are left blank and
-the typical scores are filled in, test AUC is {schema.get('test_auc_scores_blank', float('nan')):.4f}
-(03_train.ipynb, section 7). Most people filling in the form won't know their scores, so
-that lower figure is the realistic one for the website.
+That AUC assumes the applicant enters the three bureau scores. When they are left blank,
+test AUC is {schema.get('test_auc_scores_blank', float('nan')):.4f} (03_train.ipynb, section 7).
+Most people filling in the form won't know their scores, so that lower figure is the
+realistic one for the website.
+
+## Trained for blank bureau scores
+
+Almost every applicant in the data had a bureau score (only 0.06% had none), so a model
+trained on them as they are leans on the scores and has never learned to score without
+them. 03_train.ipynb (section 4) therefore hides the scores, and every feature built from
+them, on a random share of the training rows, so the model learns both cases. A blank form
+reaches the model as missing scores, exactly like those hidden rows. The share was chosen by
+cross-validation with a rule set in advance: the best blank-score AUC among shares costing
+the scores-given AUC no more than 0.002. It came out at
+{schema.get('scores_hidden_share', float('nan')):.0%}. Before this change, the model was
+trained on every row's real scores and blank forms were given the training applicants'
+median scores; it scored 0.668 test AUC with the scores blank.
+
+| share of training rows with scores hidden | CV AUC, scores given | CV AUC, scores blank |
+|---|---|---|
+{hiding_table}
 
 This is not the 0.7976 model of the research study. That one reads the applicant's whole
 credit history, which a preapproval form cannot supply; the served model is trained on the
@@ -360,7 +379,7 @@ rate.
 
 ## Rules on top of the model
 
-Three behaviours of the raw model made no sense for a lending tool, so the API handles them
+Two behaviours of the raw model made no sense for a lending tool, so the API handles them
 outside the model:
 
 - **Affordability.** An application whose monthly payment is more than 40% of monthly
@@ -369,12 +388,6 @@ outside the model:
   because Home Credit had already turned away those who could not pay. 40% is a policy
   line, not something learned. For scale, about 2.6% of the real applicants in the data
   paid more than 40% of their income, and Home Credit had approved all of them.
-- **Blank bureau scores.** When the form gives none of the three scores, the API fills in
-  the training applicants' median scores ({', '.join(f'{v:.2f}' for v in medians.values())}),
-  so a typical applicant lands near the middle of the population. Without this, the model
-  would treat the applicant like the 0.06% of training applicants who had no score at all,
-  a rare and riskier group. A partly filled form keeps its gaps, since a missing score 1
-  was normal (56% of applicants).
 - **Unemployed applicants and students.** The form leaves their job length blank, and in
   training a blank job length almost always meant a pensioner (55,352 of 55,374), a
   low-risk group. So the model scores them as safer than employed applicants, although

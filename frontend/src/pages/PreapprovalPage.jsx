@@ -304,8 +304,8 @@ export default function PreapprovalPage() {
           <FormSection title="Credit bureau" note="Optional">
             <div className="sm:col-span-2">
               <p className="t-body max-w-[62ch] pl-1 text-[0.9375rem]">
-                A lender would pull these for you. Without them the model assumes typical scores,
-                and the estimate gets much rougher.
+                A lender would pull these for you. Without them the model scores the rest of the
+                form, and the estimate gets much rougher.
               </p>
               <div className="raised mt-4 divide-y divide-[var(--border)] px-5">
                 <div className="py-4">

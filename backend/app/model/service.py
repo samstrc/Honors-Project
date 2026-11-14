@@ -97,12 +97,6 @@ def get_cohorts():
 
 
 @cache
-def get_score_medians():
-    """The training applicants' median bureau scores, saved by 03_train with the schema."""
-    return get_schema().get("ext_source_medians", {})
-
-
-@cache
 def get_percentile_edges():
     return _read_json("_percentiles.json", {}).get("percentile_edges", [])
 
@@ -119,7 +113,6 @@ def warm():
     get_schema()
     get_percentile_edges()
     get_cohorts()
-    get_score_medians()
 
 
 def add_cohort_features(row: dict, df: pd.DataFrame) -> pd.DataFrame:
@@ -190,12 +183,8 @@ def build_feature_row(app_data: LoanApplication) -> pd.DataFrame:
         "EXT_SOURCE_2": app_data.ext_score_2,
         "EXT_SOURCE_3": app_data.ext_score_3,
     }
-    # Only 0.06% of training applicants had no bureau score at all, and they were riskier
-    # than most, so a form left blank would be scored as that group. Use the typical
-    # applicant's scores instead. A partly filled form keeps its gaps: a missing score 1
-    # was normal (56% of applicants), and the model learned what that means.
-    if not uses_own_scores(app_data):
-        raw.update(get_score_medians())
+    # Blank scores stay missing. 03_train hides the scores on a share of its training rows,
+    # producing exactly these inputs, so the model has learned to score a form without them.
     if app_data.occupation is not None:
         raw["OCCUPATION_TYPE"] = app_data.occupation.value
     if app_data.organization_type:
@@ -244,8 +233,8 @@ def policy_and_notes(app_data: LoanApplication) -> tuple[str | None, list[str]]:
         notes.append(f"Less reliable for {group}: only {n} were in the data, and with no "
                      f"job length the model reads them much like a pensioner.")
     if not uses_own_scores(app_data):
-        notes.append("No bureau scores given, so typical ones were used. Real scores "
-                     "could move this a lot.")
+        notes.append("No bureau scores given, so this is scored on the rest of the form. "
+                     "Real scores could move it a lot.")
     return reason, notes
 
 

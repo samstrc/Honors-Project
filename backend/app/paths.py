@@ -8,7 +8,7 @@ BACKEND_DIR = os.path.join(REPO_ROOT, "backend")
 MODELING_DIR = os.path.join(REPO_ROOT, "modeling")
 MODELS_DIR = os.path.join(MODELING_DIR, "models")
 # The served model's files are models/<MODEL_NAME>*, written by modeling/03_train.ipynb.
-MODEL_NAME = os.environ.get("PREAPPROVAL_MODEL", "lightgbm_form_v3")
+MODEL_NAME = os.environ.get("PREAPPROVAL_MODEL", "lightgbm_form_v4")
 RESULTS_DIR = os.path.join(MODELING_DIR, "results")
 # Extra files the research guide indexes (notes). Local only, like all of documents/.
 RAG_DOCS_DIR = os.path.join(REPO_ROOT, "documents", "rag")

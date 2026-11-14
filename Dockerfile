@@ -30,7 +30,7 @@ WORKDIR /home/user/app
 COPY --chown=user backend/app ./backend/app
 COPY --chown=user modeling/features.py ./modeling/features.py
 # The served model (MODEL_NAME in backend/app/paths.py), written by modeling/03_train.ipynb
-COPY --chown=user modeling/models/lightgbm_form_v3* ./modeling/models/
+COPY --chown=user modeling/models/lightgbm_form_v4* ./modeling/models/
 COPY --chown=user --from=build /build/dist ./frontend/dist
 
 # OPENAI_API_KEY arrives as an environment variable (a Render env var).

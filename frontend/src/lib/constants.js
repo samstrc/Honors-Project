@@ -7,14 +7,14 @@ export const MODEL_AUC = 0.797;
 // (03_train.ipynb, sections 3 and 7; modeling/results/final_metrics.json)
 export const MODEL_AUC_FORM = 0.767;
 // The same model when the three bureau scores are left blank (03_train.ipynb, section 7)
-export const MODEL_AUC_FORM_BLANK = 0.668;
+export const MODEL_AUC_FORM_BLANK = 0.706;
 export const FORM_N_FEATURES = 104;
-export const FORM_MEAN_PREDICTED = 0.0804;
+export const FORM_MEAN_PREDICTED = 0.0817;
 export const BASE_RATE = 0.0807;
 // At the served cutoff, on the test set: the share of applicants declined, and the share
 // of the missed payments that falls inside that group (03_train.ipynb, section 7)
-export const DECLINE_RATE = 0.154;
-export const CAUGHT_RATE = 0.459;
+export const DECLINE_RATE = 0.165;
+export const CAUGHT_RATE = 0.479;
 
 // The dataset's currency is anonymised, so there is no exchange rate to look up. This is a
 // calibration constant, not an exchange rate: it maps the dataset's median applicant

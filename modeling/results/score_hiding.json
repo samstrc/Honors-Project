@@ -1,0 +1,26 @@
+[
+  {
+    "hidden share": 0.0,
+    "CV AUC": 0.7647425927856846,
+    "CV AUC, scores blank": 0.6726339520466922,
+    "trees": 1879
+  },
+  {
+    "hidden share": 0.25,
+    "CV AUC": 0.7643178541550566,
+    "CV AUC, scores blank": 0.7001716509363773,
+    "trees": 1683
+  },
+  {
+    "hidden share": 0.5,
+    "CV AUC": 0.7643540590808368,
+    "CV AUC, scores blank": 0.7022784910589387,
+    "trees": 1657
+  },
+  {
+    "hidden share": 0.75,
+    "CV AUC": 0.7639877303809903,
+    "CV AUC, scores blank": 0.7036091911326844,
+    "trees": 1771
+  }
+]
