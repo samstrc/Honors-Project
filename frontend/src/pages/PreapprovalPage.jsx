@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { NumberField, SelectField, SliderField, Toggle } from "../components/Fields.jsx";
 import EstimatePanel from "../components/EstimatePanel.jsx";
+import useTween from "../lib/useTween.js";
 import DistributionChart from "../components/DistributionChart.jsx";
 import FactorChart from "../components/FactorChart.jsx";
 import { predict, loadRiskDistribution } from "../lib/api.js";
@@ -506,28 +507,49 @@ function MobileEstimate({ panel, result, state }) {
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
   }, []);
-  const good = result?.decision === "preapproved";
+  const mountedAt = useRef(performance.now());
   return (
     <>
       <div ref={ref}>{panel}</div>
-      {result && below ? (
-        <a
-          href="#estimate"
-          className="glass fixed inset-x-3 bottom-3 z-30 flex animate-fade-up items-center justify-between gap-3 rounded-full py-2.5 pl-5 pr-2.5 lg:hidden"
-        >
-          <span className="flex items-center gap-2">
-            <span className="t-num text-[1.25rem] text-ink-primary">{(result.default_probability * 100).toFixed(1)}%</span>
-            <span className="text-[0.8125rem] leading-tight text-ink-secondary">chance of a missed payment</span>
-          </span>
-          <span
-            className="rounded-full px-3 py-1.5 text-[0.8125rem] font-[650] text-[#fffdf9]"
-            style={{ background: state === "invalid" ? "var(--ink-muted)" : good ? "var(--good-text)" : "var(--critical-text)" }}
-          >
-            {state === "invalid" ? "Check form" : good ? "Preapproved" : "Declined"}
-          </span>
-        </a>
-      ) : null}
+      {result && below ? <EstimateBar result={result} state={state} pageMountedAt={mountedAt.current} /> : null}
     </>
+  );
+}
+
+/** The slim glass bar itself. */
+function EstimateBar({ result, state, pageMountedAt }) {
+  const good = result.decision === "preapproved";
+  // While the page is still rising into view (App.jsx), its wrapper is transformed, and a
+  // fixed bar inside it would be pinned to the page instead of the screen, then jump into
+  // place when the page settles. So a bar that appears with the page waits for it to
+  // settle before rising in; one that appears later, on scroll, comes in at once.
+  const [delay] = useState(() => Math.max(0, 600 - (performance.now() - pageMountedAt)));
+  const [shown, setShown] = useState(delay === 0);
+  useEffect(() => {
+    if (shown) return undefined;
+    const t = setTimeout(() => setShown(true), delay);
+    return () => clearTimeout(t);
+  }, [shown, delay]);
+  // The same count-up as the dial, starting as the bar rises in, so the number eases from
+  // 0% to the estimate and then to each new one.
+  const prob = useTween(shown ? result.default_probability : null, 800, 0) ?? 0;
+  return (
+    <a
+      href="#estimate"
+      className="glass fixed inset-x-3 bottom-3 z-30 flex animate-fade-up items-center justify-between gap-3 rounded-full py-2.5 pl-5 pr-2.5 lg:hidden"
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      <span className="flex items-center gap-2">
+        <span className="t-num font-display text-[1.25rem] text-ink-primary">{(prob * 100).toFixed(1)}%</span>
+        <span className="text-[0.8125rem] leading-tight text-ink-secondary">chance of a missed payment</span>
+      </span>
+      <span
+        className="rounded-full px-3 py-1.5 text-[0.8125rem] font-[650] text-[#fffdf9] transition-colors duration-500"
+        style={{ background: state === "invalid" ? "var(--ink-muted)" : good ? "var(--good-text)" : "var(--critical-text)" }}
+      >
+        {state === "invalid" ? "Check form" : good ? "Preapproved" : "Declined"}
+      </span>
+    </a>
   );
 }
 

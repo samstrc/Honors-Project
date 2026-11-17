@@ -11,7 +11,7 @@ import { RISK_SCALE_MAX } from "../lib/constants.js";
  * `invalidLabel` names the first field that needs fixing, so the panel can say which.
  */
 export default function EstimatePanel({ result, state, invalidLabel, compact = false, idPrefix = "estimate" }) {
-  const prob = useTween(result?.default_probability ?? null, 600, 0);
+  const prob = useTween(result?.default_probability ?? null, 800, 0);
   const has = Boolean(result);
   const good = result?.decision === "preapproved";
   const threshold = result?.threshold ?? 0;
@@ -44,12 +44,15 @@ export default function EstimatePanel({ result, state, invalidLabel, compact = f
             "Scoring…"
           ) : result.policy_reason ? (
             <>
-              <b className="font-[650] text-ink-primary">Declined on affordability.</b> {result.policy_reason}
+              <Verdict good={false} label="Declined" />
+              <br />
+              On affordability: {result.policy_reason.charAt(0).toLowerCase() + result.policy_reason.slice(1)}
             </>
           ) : (
             <>
-              <b className="font-[650] text-ink-primary">{good ? "Preapproved" : "Declined"}</b>, since it's{" "}
-              {good ? "under" : "over"} the {(threshold * 100).toFixed(1)}% cutoff. {result.risk_percentile}% of real
+              <Verdict good={good} label={good ? "Preapproved!" : "Declined"} />
+              <br />
+              {good ? "Under" : "Over"} the {(threshold * 100).toFixed(1)}% cutoff. {result.risk_percentile - 1}% of real
               applicants scored lower.
             </>
           )}
@@ -57,7 +60,7 @@ export default function EstimatePanel({ result, state, invalidLabel, compact = f
       </div>
 
       {has && (!compact || result.notes?.length) ? (
-        <div className="raised mt-2 p-5">
+        <div className="raised mt-2 animate-fade-up p-5 [animation-delay:120ms]">
           {!compact ? <TopReasons factors={result.top_factors} /> : null}
           {result.notes?.length ? (
             <ul className={`space-y-2 ${compact ? "" : "mt-5 border-t border-[var(--border)] pt-4"}`}>
@@ -74,10 +77,23 @@ export default function EstimatePanel({ result, state, invalidLabel, compact = f
   );
 }
 
+/** The decision as a short headline in its colour, above the sentence that explains it. */
+function Verdict({ good, label }) {
+  return (
+    <span
+      className="font-display mb-1 inline-block text-[1.375rem] font-[650] leading-tight tracking-[-0.02em] transition-colors duration-500"
+      style={{ color: good ? "var(--good-text)" : "var(--critical-text)" }}
+    >
+      {label}
+    </span>
+  );
+}
+
 /**
- * A 270-degree ring from 0 to 30%, open at the bottom. The arc fills to this estimate in
- * sage or brick, and a tick marks the cutoff, so how close it came reads at a glance.
- * The scale is the same as the distribution chart's.
+ * A 270-degree dial from 0 to 30%, open at the bottom, drawn like an instrument: a faint
+ * green-to-red track with a tick every 5%, the estimate's arc in sage or brick with a soft
+ * glow and a bright bead at its tip, and a notch with a small label at the cutoff, so how
+ * close it came reads at a glance. The scale is the same as the distribution chart's.
  */
 function Gauge({ prob, threshold, good }) {
   const R = 78;
@@ -88,47 +104,90 @@ function Gauge({ prob, threshold, good }) {
     const a = ((135 + 270 * frac(v)) * Math.PI) / 180;
     return [100 + r * Math.cos(a), 100 + r * Math.sin(a)];
   };
-  const [t1x, t1y] = at(threshold, R - 13);
-  const [t2x, t2y] = at(threshold, R + 13);
-  const [lx, ly] = at(threshold, R + 26);
+  const tone = good ? "var(--good)" : "var(--critical)";
+  const [t1x, t1y] = at(threshold, R - 11);
+  const [t2x, t2y] = at(threshold, R + 11);
+  const [lx, ly] = at(threshold, R + 25);
+  const [bx, by] = prob != null ? at(prob, R) : [0, 0];
+  const ticks = [];
+  for (let v = 0.05; v < RISK_SCALE_MAX; v += 0.05) ticks.push(v);
+
   return (
-    <div className="relative mx-auto w-[220px]">
-      <svg viewBox="-10 -10 220 220" className="block h-auto w-full" aria-hidden>
-        <circle cx="100" cy="100" r={R} fill="none" stroke="var(--gridline)" strokeWidth="12" strokeLinecap="round" strokeDasharray={`${C * SWEEP} ${C}`} transform="rotate(135 100 100)" />
+    <div className="relative mx-auto w-[232px]">
+      {/* a soft pool of the decision's colour behind the dial */}
+      <div
+        aria-hidden
+        className="absolute inset-6 rounded-full blur-2xl transition-colors duration-700"
+        style={{ background: prob != null ? tone : "transparent", opacity: 0.22 }}
+      />
+      <svg viewBox="-12 -12 224 224" className="relative block h-auto w-full overflow-visible" aria-hidden>
+        <defs>
+          {/* left (low risk) to right (high); the counter-rotation undoes the ring's rotate(135) */}
+          <linearGradient id="gauge-track" x1="0" y1="0" x2="1" y2="0" gradientTransform="rotate(-135 0.5 0.5)">
+            <stop offset="0%" stopColor="var(--good)" stopOpacity="0.35" />
+            <stop offset="50%" stopColor="#c9a24a" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="var(--critical)" stopOpacity="0.4" />
+          </linearGradient>
+          <filter id="gauge-glow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="3.5" result="b" />
+            <feMerge>
+              <feMergeNode in="b" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        <circle cx="100" cy="100" r={R} fill="none" stroke="rgba(255,250,240,0.07)" strokeWidth="14" strokeLinecap="round" strokeDasharray={`${C * SWEEP} ${C}`} transform="rotate(135 100 100)" />
+        <circle cx="100" cy="100" r={R} fill="none" stroke="url(#gauge-track)" strokeWidth="14" strokeLinecap="round" strokeDasharray={`${C * SWEEP} ${C}`} transform="rotate(135 100 100)" />
+        {ticks.map((v) => {
+          const [x1, y1] = at(v, R - 13);
+          const [x2, y2] = at(v, R - 17);
+          return <line key={v} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--ink-muted)" strokeOpacity="0.5" strokeWidth="1.2" strokeLinecap="round" />;
+        })}
+
         {prob != null ? (
-          <circle
-            cx="100"
-            cy="100"
-            r={R}
-            fill="none"
-            stroke={good ? "var(--good)" : "var(--critical)"}
-            strokeWidth="12"
-            strokeLinecap="round"
-            strokeDasharray={`${Math.max(0.001, C * SWEEP * frac(prob))} ${C}`}
-            transform="rotate(135 100 100)"
-            style={{ transition: "stroke 500ms ease" }}
-          />
+          <>
+            <circle
+              cx="100"
+              cy="100"
+              r={R}
+              fill="none"
+              stroke={tone}
+              strokeWidth="14"
+              strokeLinecap="round"
+              strokeDasharray={`${Math.max(0.001, C * SWEEP * frac(prob))} ${C}`}
+              transform="rotate(135 100 100)"
+              filter="url(#gauge-glow)"
+              className="animate-fade-in"
+              style={{ transition: "stroke 500ms ease" }}
+            />
+            <circle cx={bx} cy={by} r="4.5" fill="#fffaf2" className="animate-fade-in" style={{ filter: "drop-shadow(0 0 4px rgba(255,250,240,0.7))" }} />
+          </>
         ) : null}
+
         {threshold ? (
           <>
             <line x1={t1x} y1={t1y} x2={t2x} y2={t2y} stroke="var(--ink-primary)" strokeWidth="2.5" strokeLinecap="round" />
-            <text x={lx} y={ly} textAnchor={lx > 108 ? "start" : lx < 92 ? "end" : "middle"} dominantBaseline="middle" fontSize="11" fontWeight="620" fill="var(--ink-primary)">
+            <text x={lx} y={ly} textAnchor={lx > 108 ? "start" : lx < 92 ? "end" : "middle"} dominantBaseline="middle" fontSize="10.5" fontWeight="600" fill="var(--ink-secondary)" letterSpacing="0.02em">
               cutoff {(threshold * 100).toFixed(1)}%
             </text>
           </>
         ) : null}
-        <text x={at(0, R)[0]} y={at(0, R)[1] + 22} textAnchor="middle" fontSize="11" fill="var(--ink-muted)">0%</text>
-        <text x={at(RISK_SCALE_MAX, R)[0]} y={at(RISK_SCALE_MAX, R)[1] + 22} textAnchor="middle" fontSize="11" fill="var(--ink-muted)">
+        <text x={at(0, R)[0]} y={at(0, R)[1] + 24} textAnchor="middle" fontSize="10.5" fill="var(--ink-muted)">0%</text>
+        <text x={at(RISK_SCALE_MAX, R)[0]} y={at(RISK_SCALE_MAX, R)[1] + 24} textAnchor="middle" fontSize="10.5" fill="var(--ink-muted)">
           {Math.round(RISK_SCALE_MAX * 100)}%+
         </text>
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center px-10 text-center">
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
         {prob != null ? (
-          <span className="t-num text-[2.75rem] leading-none text-ink-primary">{(prob * 100).toFixed(1)}%</span>
+          <span className="t-num font-display animate-fade-up text-[2.9rem] leading-none tracking-[-0.03em] text-ink-primary">
+            {(prob * 100).toFixed(1)}
+            <span className="ml-0.5 text-[1.5rem] text-ink-secondary">%</span>
+          </span>
         ) : (
           <span className="skeleton block h-11 w-28 animate-shimmer rounded-full opacity-30" />
         )}
-        <span className="mt-1.5 text-[0.8125rem] leading-tight text-ink-secondary">chance of an early missed payment</span>
+        <span className="mt-2 max-w-[7.5rem] text-[0.75rem] leading-snug text-ink-muted">chance of an early missed payment</span>
       </div>
     </div>
   );
