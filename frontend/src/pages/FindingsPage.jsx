@@ -76,7 +76,7 @@ export default function FindingsPage() {
           </p>
         </div>
         {S ? (
-          <div className="tray w-fit">
+          <div className="tray sm:w-fit">
             <div className="raised px-5 py-5">
               <Waffle count={Math.round(S.miss_rate * 100)} label={`${Math.round(S.miss_rate * 100)} in 100 applicants missed an early payment`} />
             </div>
