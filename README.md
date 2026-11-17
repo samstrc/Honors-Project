@@ -3,7 +3,7 @@
 Sam Strickler. Predicting whether a consumer loan applicant will miss an early payment,
 and serving that prediction through an interactive preapproval site.
 
-**Result: 0.7976 test AUC**, up from 0.7786 in the original notebook. The target was 0.80
+**Result: 0.7976 test AUC**, up from 0.7802 with the first models. The target was 0.80
 and it wasn't reached. The shortfall of 0.0024 is smaller than the test set's own standard
 error of 0.0039, so the two can't be told apart on this data, but the honest figure to
 report is still 0.7976.
@@ -92,7 +92,10 @@ modeling/                 the model and everything that produces it
   01_eda.ipynb                      the data, and the numbers on the findings page
   02_research.ipynb                 first models, and what actually improved them
   03_train.ipynb                    search, train, evaluate, save the weights
-  features.py                       feature engineering, shared by 03_train and the backend
+  features.py                       the features a form can supply, shared by the notebooks and the backend
+  history_features.py               summarises the credit-history tables into the research table
+  requirements.txt                  the notebooks' packages, pinned
+  figures/                          every chart the write-up uses, saved by the notebooks
   models/                           the served model and its four sidecar files
   results/                          saved experiment results the notebooks read
   cache/                            built feature matrices (not in git, rebuilt by 03_train)
@@ -132,23 +135,24 @@ Everything personal on `/about` lives in one `PROFILE` object at the top of
 
 ## The notebooks
 
-Three, in `modeling/`, run in order.
+Three, in `modeling/`, run in order. `modeling/requirements.txt` lists the packages they
+need, at the versions the saved results came from.
 
 1. **`01_eda.ipynb`: exploring the data.** What the applications look like, the five
    auxiliary tables aggregated to one row per applicant, and the numbers on the site's
    findings page (written straight to `frontend/public/data/`).
 2. **`02_research.ipynb`: the models.** The first models (logistic regression, XGBoost,
    LightGBM, CatBoost and an MLP, with Optuna, SHAP, threshold tuning and calibration;
-   0.7786), then the controlled study of what actually improved them (0.7976), then
+   0.7802), then the controlled study of what actually improved them (0.7976), then
    fairness and what a form can see (section 3). The study's cells load saved results from
-   `results/`, since running those experiments end to end is hours of fitting; each has a
-   flag to rerun it.
+   `results/`, since running those experiments end to end is hours of fitting. Every chart
+   the write-up uses is saved to `figures/` by the cell that draws it.
 3. **`03_train.ipynb`: the model the site uses.** Form-only features without sex or
    marital status, a constraint so better bureau scores can only lower the predicted risk,
    cross-validation, hyperparameter search, training, evaluation, a check of approval rates
    by group, and the saved weights, top to bottom. A few minutes on an M5
    MacBook Pro. The search is switched off by default and reuses the setting saved in
-   `results/best_params.json`; set `RUN_SEARCH = True` to rerun it (about an hour). This is
+   `results/best_params.json`; set `RUN_SEARCH = True` to rerun it (about ten minutes). This is
    the only place in the project that writes a model file: run it, restart the backend, and
    the site serves the new model.
 

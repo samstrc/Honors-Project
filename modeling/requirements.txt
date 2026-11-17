@@ -1,0 +1,19 @@
+# What the three notebooks need, at the versions the saved results were produced with.
+# The first-model searches in 02_research come out differently on other versions of
+# XGBoost, CatBoost and Optuna.
+catboost==1.2.10
+ipykernel==7.3.0
+ipywidgets==8.1.9
+joblib==1.5.3
+lightgbm==4.7.0
+matplotlib==3.11.1
+mlflow==3.15.1
+numpy==2.4.6
+optuna==4.9.0
+optuna-integration==4.9.0
+pandas==2.3.3
+pyarrow==24.0.0
+scikit-learn==1.9.0
+seaborn==0.13.2
+shap==0.52.0
+xgboost==3.4.0

@@ -13,5 +13,5 @@
     "subsample_freq": 1,
     "learning_rate": 0.012
   },
-  "note": "Optuna trial 26 -- best by 5-fold CV (0.79703), overwritten in results/ when the extended search reused the rank1 filename"
+  "note": "Optuna trial 26, the best of the search by 5-fold CV AUC (0.79703)"
 }

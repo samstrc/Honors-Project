@@ -56,7 +56,7 @@ It does two things: builds a model that predicts whether a loan applicant will f
 repay, and serves that prediction through a preapproval tool someone can actually use.
 
 The work is in three notebooks. 01_eda explores the data. 02_research fits a first round
-of models, which reached 0.7786 test AUC, then re-runs the problem as a controlled study,
+of models, which reached 0.7802 test AUC, then re-runs the problem as a controlled study,
 one change at a time, and reaches 0.7976 with the applicant's full credit history. It ends
 by asking what a preapproval form can honestly deliver. 03_train trains the model the site
 serves on the form's fields alone, without sex or marital status, which a FastAPI backend
@@ -149,7 +149,7 @@ features are dimensionless ratios in which the unit cancels.
         ("Headline results", """
 | stage | test AUC |
 |---|---|
-| first models, best (CatBoost) | 0.7786 |
+| first models, best (LightGBM) | 0.7802 |
 | after the controlled study, final blend | 0.7976 |
 
 The stated target was 0.80 and it was not reached. The shortfall of 0.0024 is smaller
