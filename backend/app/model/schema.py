@@ -6,7 +6,6 @@ derived from these fields or looked up from the cohort tables.
 """
 
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -85,7 +84,7 @@ class LoanApplication(BaseModel):
     income: float = Field(..., gt=0, le=INCOME_MAX, description="Gross monthly income, in the dataset's currency units")
     credit_amount: float = Field(..., gt=0, le=CREDIT_MAX, description="Requested loan/credit amount")
     annuity: float = Field(..., gt=0, le=ANNUITY_MAX, description="Monthly loan payment")
-    goods_price: Optional[float] = Field(None, gt=0, le=CREDIT_MAX, description="Price of the goods the loan is for, if applicable")
+    goods_price: float | None = Field(None, gt=0, le=CREDIT_MAX, description="Price of the goods the loan is for, if applicable")
 
     # --- demographics ---
     age_years: float = Field(..., gt=17, lt=100)
@@ -98,19 +97,19 @@ class LoanApplication(BaseModel):
     # Free text rather than an Enum. 58 employer categories is too many to list here, and
     # an unrecognised value is harmless: it falls outside every trained level and is
     # treated as missing.
-    organization_type: Optional[str] = Field(
+    organization_type: str | None = Field(
         None, description="Employer category, e.g. 'Business Entity Type 3', 'Self-employed'")
-    occupation: Optional[OccupationType] = None
-    years_employed: Optional[float] = Field(None, ge=0, le=YEARS_EMPLOYED_MAX, description="Leave blank if unemployed/retired/student")
+    occupation: OccupationType | None = None
+    years_employed: float | None = Field(None, ge=0, le=YEARS_EMPLOYED_MAX, description="Leave blank if unemployed/retired/student")
 
     # --- optional: external credit bureau scores (0-1). A real system would pull these
     # from a bureau; here they are optional, for applicants who happen to know them. ---
-    ext_score_1: Optional[float] = Field(None, ge=0, le=1)
-    ext_score_2: Optional[float] = Field(None, ge=0, le=1)
-    ext_score_3: Optional[float] = Field(None, ge=0, le=1)
+    ext_score_1: float | None = Field(None, ge=0, le=1)
+    ext_score_2: float | None = Field(None, ge=0, le=1)
+    ext_score_3: float | None = Field(None, ge=0, le=1)
 
     # --- optional: existing credit card utilization, if the applicant has one ---
-    cc_utilization: Optional[float] = Field(None, ge=0, description="Existing credit card balance / limit, if applicable")
+    cc_utilization: float | None = Field(None, ge=0, description="Existing credit card balance / limit, if applicable")
 
     @model_validator(mode="after")
     def _fields_agree(self):
@@ -143,5 +142,5 @@ class PreapprovalResponse(BaseModel):
     n_contributing: int = 0  # how many features moved the score at all; top_factors is
                              # only the largest few of these
     top_factors: list[FeatureContribution]
-    policy_reason: Optional[str] = None  # why lending policy declined it, whatever the score
+    policy_reason: str | None = None  # why lending policy declined it, whatever the score
     notes: list[str] = []  # caveats about how far to trust this particular score

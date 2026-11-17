@@ -30,7 +30,7 @@ from .schema import FeatureContribution, LoanApplication, PreapprovalResponse
 # of these formulas here would be free to drift, and that kind of train/serve skew is hard
 # to catch from outside: the predictions stay plausible while quietly getting worse.
 sys.path.insert(0, MODELING_DIR)
-from features import add_application_features  # noqa: E402
+from features import add_application_features
 
 # Built by modeling/03_train.ipynb. No calibration wrapper: without scale_pos_weight, and
 # trained on the inputs it is served, the model's probabilities come out calibrated on

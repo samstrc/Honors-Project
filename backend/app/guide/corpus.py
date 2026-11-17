@@ -29,9 +29,8 @@ import re
 
 from langchain_core.documents import Document
 
-from ..paths import MODEL_NAME
+from ..paths import MODEL_NAME, MODELS_DIR, PAPER_PDF
 from ..paths import MODELING_DIR as MODELING
-from ..paths import MODELS_DIR, PAPER_PDF
 from ..paths import RAG_DOCS_DIR as DOCS
 from ..paths import RESULTS_DIR as RESULTS
 
@@ -193,7 +192,7 @@ def notebook_sections(path: str) -> list[Document]:
     def flush():
         body = "\n\n".join(buf).strip()
         # Drop rules and stray whitespace left behind after splitting on headings.
-        body = re.sub(r"^\s*---\s*$", "", body, flags=re.M).strip()
+        body = re.sub(r"^\s*---\s*$", "", body, flags=re.MULTILINE).strip()
         if len(body) > 120:                     # skip one-line transition cells
             docs.append(Document(
                 page_content=f"# {heading}\n\n{body}",
@@ -208,7 +207,7 @@ def notebook_sections(path: str) -> list[Document]:
         # Strip the HTML comments used as section sentinels, then skip the cell only if
         # nothing is left. Testing `startswith("<!--")` instead would drop any cell that
         # opens with a marker but carries real content after it.
-        src = re.sub(r"^\s*(<!--.*?-->\s*)+", "", src, flags=re.S).strip()
+        src = re.sub(r"^\s*(<!--.*?-->\s*)+", "", src, flags=re.DOTALL).strip()
         if not src:
             continue
         for line in src.split("\n"):
