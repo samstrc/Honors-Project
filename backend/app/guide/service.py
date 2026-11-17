@@ -12,10 +12,17 @@ from __future__ import annotations
 
 import json
 import threading
+from typing import Literal
 
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+# The site is public and every question costs an OpenAI call, so a request is kept to the
+# size a real conversation needs. Only the last few turns are ever used (chat.py).
+MAX_QUESTION_CHARS = 2000
+MAX_TURN_CHARS = 8000
+MAX_HISTORY_TURNS = 6
 
 _guide = None
 _guide_error: str | None = None
@@ -50,12 +57,13 @@ def get_guide():
 
 
 class ChatMessage(BaseModel):
-    role: str
+    # Only the two roles a conversation has. A client can't slip in a "system" turn.
+    role: Literal["user", "assistant"]
     content: str
 
 
 class ChatRequest(BaseModel):
-    message: str
+    message: str = Field(min_length=1, max_length=MAX_QUESTION_CHARS)
     history: list[ChatMessage] = []
 
 
@@ -75,7 +83,9 @@ def answer_stream(req: ChatRequest):
     guide = get_guide()
     if guide is None:
         raise HTTPException(status_code=503, detail=_guide_error or "Guide is not ready.")
-    history = [m.model_dump() for m in req.history]
+    # Older turns are dropped and long ones cut, rather than refusing a long conversation
+    history = [{"role": m.role, "content": m.content[:MAX_TURN_CHARS]}
+               for m in req.history[-MAX_HISTORY_TURNS:]]
 
     def events():
         try:

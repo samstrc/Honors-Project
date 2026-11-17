@@ -13,7 +13,7 @@ from __future__ import annotations
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -25,7 +25,7 @@ from .paths import FRONTEND_DIST
 
 @asynccontextmanager
 async def lifespan(_app):
-    # Warm both up front: the model (a 10 MB joblib) and the guide (the Chroma index).
+    # Warm both up front: the model (a 5 MB joblib) and the guide (the Chroma index).
     # Neither failing is fatal; /api/health reports what's missing and the pages degrade.
     try:
         model.warm()
@@ -67,6 +67,8 @@ if os.path.isdir(FRONTEND_DIST):
     @app.api_route("/{path:path}", methods=["GET", "HEAD"], include_in_schema=False)
     def spa(path: str):
         """Static file if one exists, otherwise the app shell: the page does its own routing."""
+        if path == "api" or path.startswith("api/"):
+            raise HTTPException(status_code=404)  # a mistyped API route, not a page
         candidate = os.path.normpath(os.path.join(FRONTEND_DIST, path))
         if path and candidate.startswith(FRONTEND_DIST + os.sep) and os.path.isfile(candidate):
             return FileResponse(candidate)
