@@ -194,6 +194,7 @@ class Guide:
         Yields dicts a UI can render as they happen, so the wait is not a blank one:
 
             {"type": "status",  "stage": "condense" | "retrieve" | "write"}
+                                # "retrieve" also carries "query", what is searched for
             {"type": "sources", "sources": [...]}      # the passages the answer draws on
             {"type": "delta",   "text": "..."}         # a chunk of the answer
             {"type": "done",    "text": "..."}         # the full answer, once
@@ -203,7 +204,7 @@ class Guide:
             yield {"type": "status", "stage": "condense"}
         search_query = self._standalone(question, history)
 
-        yield {"type": "status", "stage": "retrieve"}
+        yield {"type": "status", "stage": "retrieve", "query": search_query}
         hits = self.retrieve(search_query)
         messages, sources = self._compose(question, history, hits)
         yield {"type": "sources", "sources": sources}

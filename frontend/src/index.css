@@ -244,6 +244,231 @@ body {
   }
 }
 
+/* Research guide ---------------------------------------------------------------
+   The chat sits on slowly drifting pools of the palette (.guide-aurora) behind frosted
+   glass. Everything still reads on the solid card colour when
+   transparency or motion is turned down. */
+.guide-shell {
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 28px;
+  padding: 8px;
+  background: linear-gradient(140deg,
+    color-mix(in srgb, var(--cat-1) 22%, var(--tray)),
+    var(--tray) 45%,
+    color-mix(in srgb, var(--cat-2) 18%, var(--tray)));
+  box-shadow: inset 0 1px 0 var(--glass-edge), 0 24px 60px -30px rgba(30, 27, 23, 0.45);
+}
+.guide-aurora {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+/* Four soft blobs, each on its own long, looping path with its own timing, so the colours
+   keep drifting into new mixes instead of visibly repeating. They also change shape as
+   they go (the border-radius morph), which is what makes it read as flowing liquid rather
+   than circles sliding about. */
+.guide-aurora span {
+  position: absolute;
+  width: 60%;
+  height: 55%;
+  filter: blur(56px);
+  will-change: transform, border-radius;
+}
+.guide-aurora span:nth-child(1) {
+  left: -15%;
+  top: -12%;
+  background: var(--cat-1);
+  opacity: 0.6;
+  animation: guide-flow-a 38s ease-in-out infinite, guide-morph 17s ease-in-out infinite;
+}
+.guide-aurora span:nth-child(2) {
+  right: -18%;
+  top: 20%;
+  background: var(--cat-2);
+  opacity: 0.42;
+  animation: guide-flow-b 46s ease-in-out infinite, guide-morph 21s ease-in-out infinite reverse;
+}
+.guide-aurora span:nth-child(3) {
+  left: 15%;
+  bottom: -20%;
+  background: var(--cat-4);
+  opacity: 0.42;
+  animation: guide-flow-c 42s ease-in-out infinite, guide-morph 19s ease-in-out infinite;
+  animation-delay: -14s, -6s;
+}
+.guide-aurora span:nth-child(4) {
+  width: 40%;
+  height: 40%;
+  left: 40%;
+  top: 30%;
+  background: color-mix(in srgb, var(--cat-1) 60%, var(--cat-4));
+  opacity: 0.3;
+  animation: guide-flow-b 54s ease-in-out infinite reverse, guide-morph 23s ease-in-out infinite;
+  animation-delay: -20s, -3s;
+}
+@keyframes guide-flow-a {
+  0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  25% { transform: translate(35%, 20%) rotate(40deg) scale(1.15); }
+  50% { transform: translate(55%, 55%) rotate(90deg) scale(0.9); }
+  75% { transform: translate(10%, 45%) rotate(140deg) scale(1.1); }
+}
+@keyframes guide-flow-b {
+  0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  30% { transform: translate(-40%, 30%) rotate(-50deg) scale(1.2); }
+  60% { transform: translate(-60%, -15%) rotate(-110deg) scale(0.95); }
+  80% { transform: translate(-15%, -30%) rotate(-150deg) scale(1.05); }
+}
+@keyframes guide-flow-c {
+  0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  33% { transform: translate(40%, -45%) rotate(60deg) scale(1.1); }
+  66% { transform: translate(-30%, -60%) rotate(120deg) scale(1.2); }
+}
+@keyframes guide-morph {
+  0%, 100% { border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%; }
+  33% { border-radius: 63% 37% 41% 59% / 57% 62% 38% 43%; }
+  66% { border-radius: 38% 62% 52% 48% / 64% 35% 65% 36%; }
+}
+/* The message pane: frosted glass with a bright rim along the top edge. */
+.guide-glass {
+  background-color: color-mix(in srgb, var(--card) 72%, transparent);
+  background-image: linear-gradient(180deg, var(--glass-shine), transparent 22%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  backdrop-filter: blur(24px) saturate(170%);
+  border: 1px solid var(--glass-edge);
+  border-radius: 20px;
+  box-shadow: inset 0 1px 0 var(--glass-edge), 0 8px 28px -16px rgba(30, 27, 23, 0.35);
+}
+html.dark .guide-glass {
+  background-color: color-mix(in srgb, var(--card) 70%, transparent);
+  border-color: rgba(255, 245, 230, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 245, 230, 0.08), 0 8px 28px -16px rgba(0, 0, 0, 0.6);
+}
+
+/* Smaller drops of the same glass: chips, the sources button, the stop button. */
+.guide-pill {
+  background-color: color-mix(in srgb, var(--card) 62%, transparent);
+  background-image: linear-gradient(180deg, var(--glass-shine), transparent 70%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid var(--glass-edge);
+  box-shadow: inset 0 1px 0 var(--glass-edge), 0 4px 14px -8px rgba(30, 27, 23, 0.3);
+}
+html.dark .guide-pill {
+  border-color: rgba(255, 245, 230, 0.09);
+  box-shadow: inset 0 1px 0 rgba(255, 245, 230, 0.08), 0 4px 14px -8px rgba(0, 0, 0, 0.5);
+}
+
+/* The composer: a glass capsule whose rim warms to the palette while you type. */
+.guide-composer {
+  background-color: color-mix(in srgb, var(--card) 80%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid var(--glass-edge);
+  box-shadow: inset 0 1px 0 var(--glass-edge), 0 6px 20px -12px rgba(30, 27, 23, 0.35);
+  transition: box-shadow 250ms ease, border-color 250ms ease;
+}
+.guide-composer:focus-within {
+  border-color: color-mix(in srgb, var(--cat-2) 55%, var(--glass-edge));
+  box-shadow:
+    inset 0 1px 0 var(--glass-edge),
+    0 0 0 3px color-mix(in srgb, var(--cat-2) 16%, transparent),
+    0 0 26px -2px color-mix(in srgb, var(--cat-2) 45%, transparent),
+    0 0 60px -10px color-mix(in srgb, var(--cat-4) 45%, transparent);
+}
+/* The capsule glows instead, so the box inside it doesn't draw its own focus rectangle. */
+.guide-composer textarea:focus-visible {
+  outline: none;
+  filter: none;
+}
+html.dark .guide-composer {
+  border-color: rgba(255, 245, 230, 0.1);
+}
+
+/* Send: a polished clay-to-amber bead with a highlight on top. */
+.guide-send {
+  color: #fffaf2;
+  background:
+    radial-gradient(120% 80% at 30% 0%, rgba(255, 255, 255, 0.45), transparent 55%),
+    linear-gradient(150deg, #b0702a, var(--cat-2) 55%, #6e3f12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 6px 16px -6px color-mix(in srgb, var(--cat-2) 70%, transparent);
+  transition: transform 160ms ease, filter 160ms ease;
+}
+.guide-send:not(:disabled):hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+.guide-send:not(:disabled):active {
+  transform: scale(0.95);
+}
+
+/* Your question: dark glass with a soft highlight, like the ink tiles elsewhere. */
+.guide-bubble {
+  color: #f6f1e8;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 60%),
+    linear-gradient(135deg, #3a3329, #2a251f);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 8px 22px -12px rgba(30, 27, 23, 0.55);
+}
+html.dark .guide-bubble {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 60%),
+    linear-gradient(135deg, #4a4033, #362f26);
+}
+
+/* Each new paragraph, list or table of an answer eases in as it appears; the text inside
+   it is already being revealed smoothly by useSmoothText in GuidePage.jsx. */
+.guide-answer > * {
+  animation: guide-status-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* While it works: a small orb turning through the palette, and a line of text with light
+   running across it. */
+.guide-orb {
+  background: conic-gradient(from 0deg, var(--cat-1), var(--cat-4), var(--cat-2), var(--cat-1));
+  box-shadow: 0 0 12px -2px color-mix(in srgb, var(--cat-2) 60%, transparent);
+  animation: guide-orb 2.4s linear infinite;
+  -webkit-mask-image: radial-gradient(circle, #000 55%, transparent 72%);
+  mask-image: radial-gradient(circle, #000 55%, transparent 72%);
+}
+@keyframes guide-orb {
+  0% { transform: rotate(0deg) scale(0.9); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(0.9); }
+}
+.guide-shimmer {
+  color: var(--ink-secondary);
+  background: linear-gradient(100deg,
+    var(--ink-secondary) 0%, var(--ink-secondary) 40%,
+    var(--ink-primary) 50%,
+    var(--ink-secondary) 60%, var(--ink-secondary) 100%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: guide-status-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both, guide-shine 2.2s linear infinite;
+}
+/* each new status line rises a touch and comes into focus */
+@keyframes guide-status-in {
+  0% { opacity: 0; transform: translateY(5px); filter: blur(3px); }
+  100% { opacity: 1; transform: none; filter: blur(0); }
+}
+@keyframes guide-shine {
+  0% { background-position: 100% 0; }
+  100% { background-position: -150% 0; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .guide-glass,
+  .guide-pill,
+  .guide-composer {
+    background-color: var(--card);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
 /* Type -------------------------------------------------------------------------
    Hierarchy comes from weight and colour more than size: headings are ink-primary at
    650, body is ink-secondary at 400, and the gap between them is what reads. */
