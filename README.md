@@ -152,9 +152,11 @@ Three, in `modeling/`, run in order.
    the only place in the project that writes a model file: run it, restart the backend, and
    the site serves the new model.
 
-All of the analysis and modelling happens in these notebooks. `features.py` is the one
-piece of code outside them, because the site's backend has to compute the same features the
-model was trained on; everything else outside `modeling/` is the website.
+All of the analysis and modelling happens in these notebooks. The two feature modules are the
+only code outside them: `features.py` because the site's backend has to compute the same
+features the model was trained on, and `history_features.py` because building the research
+table from the raw history tables is too long for a notebook cell. Everything else outside
+`modeling/` is the website.
 
 ## What the project found
 

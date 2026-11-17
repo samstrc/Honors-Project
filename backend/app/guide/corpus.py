@@ -12,7 +12,7 @@ Sources, roughly in order of how often they answer a question:
   1. Markdown cells from the three notebooks in `modeling/` -- the written narrative, already prose and already sectioned by heading.
   2. `modeling/results/*.json|csv` -- the numbers, rendered as readable tables rather
      than raw JSON, so a retrieved chunk reads like a results section.
-  3. Module docstrings from `modeling/features.py` and `backend/app/model/*.py` -- these carry the reasoning
+  3. Module docstrings from `modeling/features.py`, `modeling/history_features.py` and `backend/app/model/*.py` -- these carry the reasoning
      behind each decision, which is most of what the guide gets asked about.
   4. A hand-written project overview -- the framing no single file states outright.
   5. The research paper, `paper/main.pdf`, once `INDEX_PAPER` is switched on.
@@ -479,7 +479,7 @@ def module_docstrings() -> list[Document]:
     gets asked about far more often than the code itself.
     """
     model_dir = os.path.join(HERE, "..", "model")
-    sources = [("modeling", os.path.join(MODELING, "features.py"))] + [
+    sources = [("modeling", os.path.join(MODELING, fn)) for fn in ("features.py", "history_features.py")] + [
         ("model", os.path.join(model_dir, fn)) for fn in sorted(os.listdir(model_dir))
         if fn.endswith(".py") and not fn.startswith("_")]
     docs = []
