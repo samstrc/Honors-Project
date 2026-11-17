@@ -258,7 +258,8 @@ export default function GuidePage() {
     setInput("");
     setError(null);
     stickRef.current = true;
-    const history = messages.filter((m) => !m.error).map((m) => ({ role: m.role, content: m.content }));
+    // the backend only reads the last few turns
+    const history = messages.filter((m) => !m.error).slice(-6).map((m) => ({ role: m.role, content: m.content }));
     setMessages((m) => [
       ...m,
       { role: "user", content: prompt },

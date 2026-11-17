@@ -36,7 +36,11 @@ const PRESET_INFO = {
   "Typical applicant": { short: "Typical", blurb: "A real applicant with typical answers. No bureau scores." },
   "High-risk applicant": { short: "High-risk", blurb: "21, unemployed, borrowing a lot, card over its limit." },
 };
-const presetIsActive = (form, preset) => Object.keys(preset).every((k) => form[k] === preset[k]);
+// An example is active only while the whole form still matches it, optional fields included.
+const presetIsActive = (form, preset) => {
+  const full = { ...DEFAULT_FORM, ...preset };
+  return Object.keys(full).every((k) => form[k] === full[k]);
+};
 
 // Form order, so the panel can name the first field that needs fixing.
 const FIELD_ORDER = ["income", "annuity", "creditAmount", "goodsPrice", "ageYears", "children", "familyMembers", "yearsEmployed"];
@@ -168,7 +172,7 @@ export default function PreapprovalPage() {
                   type="button"
                   aria-pressed={active}
                   data-active={active}
-                  onClick={() => setForm((f) => ({ ...f, ...PRESETS[name] }))}
+                  onClick={() => setForm({ ...DEFAULT_FORM, ...PRESETS[name] })}
                   className={`relative flex items-baseline justify-center gap-1.5 whitespace-nowrap rounded-full px-2 py-2 text-[0.9375rem] transition-colors duration-300 sm:gap-2 sm:px-5 ${
                     active ? "text-ink-primary" : "text-ink-secondary hover:text-ink-primary"
                   }`}

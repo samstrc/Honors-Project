@@ -4,8 +4,8 @@ import { USD_TO_UNITS, LIMITS } from "./constants.js";
 const NOT_EMPLOYED = ["Unemployed", "Pensioner", "Student"];
 export const isEmployedUnknown = (form) => NOT_EMPLOYED.includes(form.incomeType);
 
-// The request backend/app/model/schema.py expects, built from the form. The submit
-// button, the live estimate and the preset badges all go through this.
+// The request backend/app/model/schema.py expects, built from the form. The live
+// estimate and the example buttons' scores both go through this.
 export function buildPayload(form) {
   const employedUnknown = isEmployedUnknown(form);
   return {
