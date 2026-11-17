@@ -454,3 +454,24 @@ select.field-input option {
     scroll-behavior: auto !important;
   }
 }
+
+/* The painting behind the findings page (components/FindingsBackdrop.jsx). Positioned so
+   Fuji stays in view on a phone; in dark mode it is inverted, so the silk turns dark and
+   the ink light, and dimmed. */
+.findings-backdrop {
+  background: url("/findings-bg.jpg") 72% top / cover no-repeat;
+  opacity: 0.9;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 50%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 50%, transparent 100%);
+}
+/* On a phone the nav covers the top of the page, so the painting starts below it */
+@media (max-width: 639px) {
+  .findings-backdrop {
+    background-size: auto 34rem;
+    background-position: 64% 5.5rem;
+  }
+}
+html.dark .findings-backdrop {
+  filter: invert(1) hue-rotate(180deg) sepia(0.35);
+  opacity: 0.35;
+}
