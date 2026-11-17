@@ -20,7 +20,7 @@ because the model is trained with the scores hidden on 75% of its training rows.
 Two processes, so two terminal tabs.
 
 ```bash
-# tab 1: the backend, at localhost:8000
+# tab 1: the backend, at 127.0.0.1:8000
 cd backend
 conda activate honorsproject          # or: pip install -r requirements.txt
 cp .env.example .env                  # once; add OPENAI_API_KEY for the research guide
@@ -48,31 +48,6 @@ and the built site on one port. `render.yaml` deploys it to Render as a free web
 New → Blueprint → pick this repo, and set `OPENAI_API_KEY` when asked. Pushing to `main`
 redeploys.
 
-### The iPhone app (`ios/`)
-
-A native SwiftUI front end for the same backend: the preapproval form with a live estimate,
-the full result (risk meter, policy reasons, the factors that moved the score), the research
-guide chat, and a Server tab. It holds no model or API key of its own; everything is scored
-on the backend, so it always matches the website. It uses Liquid Glass on iOS 26 and later,
-and a frosted fallback on iOS 17-25.
-
-1. Open `ios/Preapproval.xcodeproj` in Xcode.
-2. Pick an iPhone simulator (or your phone) in the toolbar and press Run (⌘R).
-
-It talks to the deployed site, `https://preapproval.onrender.com`, by default, so nothing else
-needs to be running. Render's free plan sleeps when idle, so the first score after a quiet
-spell can take up to a minute (the app says "Waking the server"); after that it's about 2 s.
-
-To use your local backend instead, start it as in tab 1 above, then in the app's **Server**
-tab pick **This Mac** (`localhost:8000`, about 0.1 s a score). That works in the simulator.
-A real iPhone can't see your Mac's `localhost`: choose **Custom** and enter your Mac's Wi-Fi
-address with port 8000, e.g. `http://192.168.1.20:8000`, and start uvicorn with
-`--host 0.0.0.0` so it accepts connections from the network.
-
-The form's limits, presets and dollar conversion mirror `frontend/src/lib/constants.js` and
-`application.js`; if those change, update `ios/Preapproval/Application.swift` to match. The
-app icon is drawn by `ios/Tools/RenderAppIcon/main.swift` (instructions at the top of it).
-
 ## What's here
 
 ```
@@ -80,7 +55,6 @@ frontend/                 React + Vite + Tailwind site (no secrets, no model log
   src/pages/                        Findings, Preapproval, Guide, About
   public/data/                      precomputed JSON for the charts, written by the notebooks
 
-ios/                      native iPhone app (SwiftUI) for the same API; see "The iPhone app" above
 backend/                  one FastAPI app: the API, and the built site in production
   app/main.py                       routes: /api/predict, /api/chat/stream, /api/health
   app/model/                        scores an application and explains the score
@@ -102,7 +76,7 @@ modeling/                 the model and everything that produces it
 
 data/                     the raw Kaggle competition files (10 CSVs, 2.5 GB, not in git)
 documents/                local only, not in git
-  rag/                              extra notes the research guide indexes, beside paper/main.pdf
+  rag/                              extra notes the research guide indexes
   other/                            personal paperwork, unrelated to the site
 Dockerfile, render.yaml   deployment
 ```
@@ -113,8 +87,9 @@ The backend reads the served model from `modeling/models/` and imports
 ## The research guide (`backend/app/guide/`)
 
 A retrieval-augmented chatbot that answers from the project's own artefacts and cites
-which one each claim came from: the notebook's markdown, the ablation results, feature
-importances, the served model's settings, module docstrings, and anything in `documents/rag/` (.pdf, .md, .txt).
+which one each claim came from: the notebooks' markdown, the ablation results, feature
+importances, the served model's settings, module docstrings, and anything in
+`documents/rag/` (.pdf, .md, .txt).
 
 Rebuild the index after the write-up changes or a document lands in `documents/rag/`:
 
@@ -125,8 +100,10 @@ python -m app.guide.chat        # a terminal session, for testing
 ```
 
 Design choices: follow-up questions are condensed into standalone ones before retrieval;
-the model is told to refuse rather than guess; it is told to be plain about the negative
-results; Chroma uses cosine distance to match OpenAI embeddings.
+facts about the project come only from the retrieved passages, and the guide says so when
+they don't cover a question; general questions about machine learning and lending it may
+answer from what it knows; it is told to be plain about the negative results; Chroma uses
+cosine distance to match OpenAI embeddings.
 
 ## The About page
 
@@ -188,8 +165,6 @@ The rest of what came out of it:
   approved somewhat less often, through features that carry some of the same signal.
 
 ## Notes on the data
-
-The full evidence for these is in `documents/rag/data-notes.md`.
 
 These are consumer loans, not mortgages. "Home Credit" is the lender's name. The products
 are point-of-sale credit, small cash loans and revolving credit, with a median term of 12
