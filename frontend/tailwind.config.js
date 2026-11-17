@@ -6,7 +6,7 @@ export default {
     extend: {
       fontFamily: {
         sans: [
-          '"Schibsted Grotesk Variable"',
+          '"Geist Variable"',
           "-apple-system",
           "BlinkMacSystemFont",
           '"Segoe UI"',
@@ -15,6 +15,7 @@ export default {
           "Arial",
           "sans-serif",
         ],
+        display: ['"Bricolage Grotesque Variable"', '"Geist Variable"', "-apple-system", "sans-serif"],
       },
       colors: {
         surface: "var(--surface)",

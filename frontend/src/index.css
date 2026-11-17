@@ -1,4 +1,5 @@
-@import "@fontsource-variable/schibsted-grotesk";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/bricolage-grotesque";
 
 @tailwind base;
 @tailwind components;
@@ -243,19 +244,23 @@ body {
    Hierarchy comes from weight and colour more than size: headings are ink-primary at
    650, body is ink-secondary at 400, and the gap between them is what reads. */
 @layer components {
+  /* Headings and big figures use Bricolage Grotesque, which has more character than the
+     body face; Geist keeps running text and labels plain and easy to read. */
   .t-h1 {
-    font-size: 1.75rem;
-    line-height: 1.15;
-    font-weight: 680;
-    letter-spacing: -0.018em;
+    font-family: theme("fontFamily.display");
+    font-size: 2rem;
+    line-height: 1.1;
+    font-weight: 700;
+    letter-spacing: -0.03em;
     color: var(--ink-primary);
     text-wrap: balance;
   }
   .t-h2 {
-    font-size: 1.25rem;
-    line-height: 1.3;
+    font-family: theme("fontFamily.display");
+    font-size: 1.375rem;
+    line-height: 1.25;
     font-weight: 650;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
     color: var(--ink-primary);
     text-wrap: balance;
   }
@@ -283,12 +288,11 @@ body {
     line-height: 1.5;
     color: var(--ink-muted);
   }
-  /* Schibsted's tabular figures are very wide, so figures stay proportional; columns
-     that must line up are right-aligned instead. */
+  /* Figures stay proportional; columns that must line up are right-aligned instead. */
   .t-num {
     font-variant-numeric: lining-nums proportional-nums;
-    font-weight: 650;
-    letter-spacing: -0.01em;
+    font-weight: 700;
+    letter-spacing: -0.02em;
   }
 
   .link {

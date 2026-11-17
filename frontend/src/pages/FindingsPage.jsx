@@ -15,7 +15,7 @@ function CountUp({ value, caption }) {
   const shown = useCountUp(value, inView, 1100);
   return (
     <div ref={ref} className="ink-card inline-flex flex-col px-5 py-4">
-      <p className="t-num text-[2.5rem] leading-none" aria-label={`${value.toFixed(1)} times`}>
+      <p className="t-num font-display text-[2.5rem] leading-none" aria-label={`${value.toFixed(1)} times`}>
         {shown.toFixed(1)}×
       </p>
       <p className="mt-1.5 text-[0.8125rem] text-ink-secondary">{caption}</p>
