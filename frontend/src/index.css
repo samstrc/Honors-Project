@@ -110,10 +110,14 @@ body {
   display: none;
 }
 
-/* Every interactive element gets the same visible focus ring from the keyboard. */
+/* Every interactive element gets the same visible focus from the keyboard: a soft ring
+   that follows the element's own rounded shape, with a warm glow around it. The glow is a
+   drop-shadow filter rather than a box-shadow, so it adds to an element's own shadow
+   instead of replacing it. */
 :focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
+  outline: 2px solid color-mix(in srgb, var(--focus) 65%, transparent);
+  outline-offset: 3px;
+  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--focus) 45%, transparent));
 }
 .focus-ring:focus-visible {
   outline: 2px solid var(--focus);
@@ -355,7 +359,8 @@ body {
 
 @layer components {
 /* Inputs are raised pills on the tray, like the cards around them. The edge is a hairline
-   that darkens on hover; focus adds an accent ring on top of the standard outline. */
+   that darkens on hover; focus warms the edge and adds a soft glow, like the guide's
+   question box. */
 .field-input {
   width: 100%;
   height: 2.75rem;
@@ -373,11 +378,15 @@ body {
   border-color: var(--rule);
 }
 .field-input:focus {
-  border-color: var(--accent);
-  box-shadow: var(--shadow-raised), 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--border));
+  box-shadow:
+    var(--shadow-raised),
+    0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent),
+    0 0 22px -2px color-mix(in srgb, var(--accent) 40%, transparent);
 }
 .field-input:focus-visible {
   outline: none;
+  filter: none;
 }
 .field-input[aria-invalid="true"] {
   border-color: var(--critical);
@@ -437,7 +446,7 @@ select.field-input option {
   transform: scale(1.12);
 }
 .slider:focus-visible {
-  outline: 2px solid var(--focus);
+  outline: 2px solid color-mix(in srgb, var(--focus) 65%, transparent);
   outline-offset: 6px;
 }
 
