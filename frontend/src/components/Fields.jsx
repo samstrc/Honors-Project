@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, useState } from "react";
 import { Tooltip } from "./Tooltip.jsx";
 
 export function Field({ label, help, error, children, htmlFor }) {
@@ -41,7 +41,9 @@ export function HelpTip({ text }) {
 // the site's own presets -- with a native "nearest valid values are…" popup. Range checks
 // live in validate() (lib/application.js) so the message can say what's actually wrong.
 export function NumberField({ id, label, help, error, value, onChange, min, max, prefix, suffix, disabled, placeholder, stepper }) {
-  const input = (describedBy, extra = "") => (
+  // Which way the last − or + went, and a counter so the same nudge twice still replays.
+  const [nudged, setNudged] = useState({ dir: 0, n: 0 });
+  const input = (describedBy, extra = "", style) => (
     <input
       id={id}
       type="number"
@@ -55,15 +57,24 @@ export function NumberField({ id, label, help, error, value, onChange, min, max,
       max={max}
       placeholder={placeholder}
       disabled={disabled}
+      style={style}
       onChange={(e) => onChange(e.target.value === "" ? "" : Number(e.target.value))}
     />
   );
 
   // Small whole numbers (children, household) get round − and + buttons either side, so
-  // a phone doesn't need its keyboard. The box in the middle still takes typing.
+  // a phone doesn't need its keyboard. The box in the middle still takes typing. Each
+  // nudge gives the box a small pop, with the number arriving from the direction it moved.
   if (stepper) {
     const n = Number(value) || 0;
-    const nudge = (d) => onChange(Math.min(max ?? Infinity, Math.max(min ?? -Infinity, n + d)));
+    const nudge = (d) => {
+      onChange(Math.min(max ?? Infinity, Math.max(min ?? -Infinity, n + d)));
+      setNudged((p) => ({ dir: d, n: p.n + 1 }));
+    };
+    // two identical keyframes, alternated, so a repeat nudge restarts the animation
+    const anim = nudged.n
+      ? { animation: `${nudged.dir > 0 ? "step-up" : "step-down"}-${nudged.n % 2} 320ms cubic-bezier(0.16, 1, 0.3, 1)` }
+      : undefined;
     return (
       <Field label={label} help={help} error={error} htmlFor={id}>
         {(describedBy) => (
@@ -71,7 +82,7 @@ export function NumberField({ id, label, help, error, value, onChange, min, max,
             <StepButton label={`Fewer: ${label}`} onClick={() => nudge(-1)} disabled={disabled || n <= (min ?? -Infinity)}>
               <path d="M5 10h10" />
             </StepButton>
-            {input(describedBy, "t-num text-center text-[1.0625rem] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none")}
+            {input(describedBy, "t-num text-center text-[1.0625rem] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none", anim)}
             <StepButton label={`More: ${label}`} onClick={() => nudge(1)} disabled={disabled || n >= (max ?? Infinity)}>
               <path d="M5 10h10M10 5v10" />
             </StepButton>
