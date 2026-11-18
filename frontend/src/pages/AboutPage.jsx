@@ -97,7 +97,7 @@ const initialsOf = (name) =>
 function Photo({ src, name }) {
   const [failed, setFailed] = useState(false);
   return (
-    <div className="h-40 w-40 shrink-0 overflow-hidden rounded-[20px] bg-[var(--gridline)] shadow-[var(--shadow-raised)] sm:h-48 sm:w-48">
+    <div className="h-40 w-40 shrink-0 overflow-hidden rounded-[20px] bg-[var(--gridline)] shadow-[0_14px_34px_-14px_rgba(30,27,23,0.5)] sm:h-48 sm:w-48">
       {src && !failed ? (
         <img src={src} alt={name} className="h-full w-full object-cover" onError={() => setFailed(true)} />
       ) : (
@@ -114,7 +114,7 @@ function Links({ links }) {
         const external = !l.href.startsWith("mailto:");
         return (
           <li key={l.label}>
-            <a href={l.href} target={external ? "_blank" : undefined} rel="noreferrer" className="chip">
+            <a href={l.href} target={external ? "_blank" : undefined} rel="noreferrer" className="guide-pill inline-flex items-center rounded-full px-3.5 py-1.5 text-[0.875rem] font-[550] text-ink-primary transition-transform duration-150 hover:-translate-y-px">
               {l.label}
               {external ? <span className="sr-only"> (opens in a new tab)</span> : null}
             </a>
@@ -127,11 +127,11 @@ function Links({ links }) {
 
 function Section({ id, title, children }) {
   return (
-    <section aria-labelledby={id} className="tray grid grid-cols-1 gap-2 lg:grid-cols-[minmax(0,13rem)_minmax(0,1fr)]">
-      <h2 id={id} className="t-h2 px-4 pb-2 pt-4">
+    <section aria-labelledby={id} className="grid grid-cols-1 gap-2 lg:grid-cols-[minmax(0,13rem)_minmax(0,1fr)] lg:gap-4">
+      <h2 id={id} className="t-h2 px-1 pt-4 lg:pt-6">
         {title}
       </h2>
-      <div className="raised min-w-0 p-5 sm:p-6">{children}</div>
+      <div className="guide-glass min-w-0 p-5 sm:p-6">{children}</div>
     </section>
   );
 }
@@ -140,8 +140,8 @@ export default function AboutPage() {
   const P = PROFILE;
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-1 items-center gap-8 pb-8 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-10">
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 items-center gap-8 pb-6 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-10">
         <Photo src={P.photo} name={P.name} />
         <div>
           <h1 className="t-h1">{P.name}</h1>
@@ -194,7 +194,7 @@ export default function AboutPage() {
               <h3 className="t-h3 text-[0.9375rem]">{label}</h3>
               <ul className="mt-3 flex flex-wrap gap-1.5">
                 {items.map((t) => (
-                  <li key={t} className="rounded-full bg-[var(--tray)] px-3 py-1 text-[0.8125rem] text-ink-secondary">
+                  <li key={t} className="rounded-full bg-[color-mix(in_srgb,var(--tray)_75%,transparent)] px-3 py-1 text-[0.8125rem] text-ink-secondary">
                     {t}
                   </li>
                 ))}

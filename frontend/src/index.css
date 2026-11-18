@@ -338,6 +338,29 @@ body {
   33% { border-radius: 63% 37% 41% 59% / 57% 62% 38% 43%; }
   66% { border-radius: 38% 62% 52% 48% / 64% 35% 65% 36%; }
 }
+/* The same pools behind the whole About page (components/AboutBackdrop.jsx): fixed to the
+   window, softer and fainter, since here they sit behind paragraphs rather than a chat. */
+.about-aurora {
+  position: fixed;
+  z-index: -10;
+  overflow: hidden;
+}
+/* Scrolling moves each pool by its own amount (--about-scroll runs 0 to 1 down the page).
+   It uses `translate`, which adds to the drifting `transform` animation instead of
+   replacing it, and a short transition smooths out a jumpy scroll wheel. The sage pool
+   sinks while the clay and gold ones rise, so the mix of colours changes as you read. */
+.about-aurora span {
+  filter: blur(90px);
+  transition: translate 600ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.about-aurora span:nth-child(1) { opacity: 0.3; translate: calc(var(--about-scroll, 0) * 25vw) calc(var(--about-scroll, 0) * 70vh); }
+.about-aurora span:nth-child(2) { opacity: 0.22; translate: calc(var(--about-scroll, 0) * -20vw) calc(var(--about-scroll, 0) * -45vh); }
+.about-aurora span:nth-child(3) { opacity: 0.24; translate: calc(var(--about-scroll, 0) * -15vw) calc(var(--about-scroll, 0) * -60vh); }
+.about-aurora span:nth-child(4) { opacity: 0.16; translate: calc(var(--about-scroll, 0) * 20vw) calc(var(--about-scroll, 0) * 35vh); }
+html.dark .about-aurora span:nth-child(1) { opacity: 0.22; }
+html.dark .about-aurora span:nth-child(2) { opacity: 0.2; }
+html.dark .about-aurora span:nth-child(3) { opacity: 0.18; }
+
 /* The message pane: frosted glass with a bright rim along the top edge. */
 .guide-glass {
   background-color: color-mix(in srgb, var(--card) 72%, transparent);

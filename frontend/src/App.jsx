@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import AboutBackdrop from "./components/AboutBackdrop.jsx";
 import FindingsBackdrop from "./components/FindingsBackdrop.jsx";
 import Nav from "./components/Nav.jsx";
 import FindingsPage from "./pages/FindingsPage.jsx";
@@ -19,6 +20,7 @@ export default function App() {
         <div className="absolute -right-[12%] top-[30%] h-[55vh] w-[45vw] rounded-full bg-[var(--cat-2)] opacity-[0.10] blur-[120px] dark:opacity-[0.14]" />
       </div>
       {location.pathname === "/" ? <FindingsBackdrop /> : null}
+      {location.pathname === "/about" ? <AboutBackdrop /> : null}
       <a
         href="#main"
         className="sr-only z-50 rounded-md bg-card px-3 py-2 text-ink-primary focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50"
