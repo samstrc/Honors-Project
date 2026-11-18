@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Markdown from "../components/Markdown.jsx";
+import Reveal from "../components/Reveal.jsx";
 import { Tooltip } from "../components/Tooltip.jsx";
 import { askGuideStream } from "../lib/api.js";
 import { CheckIcon } from "../components/icons.jsx";
@@ -78,7 +79,6 @@ function Sources({ sources }) {
   const items = sourceItems(sources);
   if (!items.length) return null;
   const top = Math.max(...items.map((s) => s.similarity ?? 0), 0.001);
-  const current = open !== null ? items[open] : null;
 
   return (
     <div className="mt-2.5">
@@ -102,8 +102,9 @@ function Sources({ sources }) {
         </svg>
       </button>
 
-      {expanded ? (
-        <ul className="mt-1.5 animate-fade-in space-y-0.5">
+      {/* the same glide as the optional sections of the preapproval form */}
+      <Reveal open={expanded}>
+        <ul className="space-y-0.5 pt-1.5">
           {items.map((s, i) => (
             <li key={s.label}>
               <button
@@ -126,16 +127,18 @@ function Sources({ sources }) {
                   </Tooltip>
                 ) : null}
               </button>
-              {open === i && current?.snippet ? (
-                <div className="mb-1 ml-2 mt-1 max-h-52 animate-fade-in overflow-y-auto border-l-2 border-[var(--rule)] py-0.5 pl-3 text-[0.8125rem] leading-relaxed text-ink-secondary">
-                  {/* the corpus is markdown (notebook cells, docs), so render it as such */}
-                  <Markdown text={current.snippet.replace(/\n{3,}/g, "\n\n")} />
-                </div>
+              {s.snippet ? (
+                <Reveal open={open === i}>
+                  <div className="mb-1 ml-2 mt-1 max-h-52 overflow-y-auto border-l-2 border-[var(--rule)] py-0.5 pl-3 text-[0.8125rem] leading-relaxed text-ink-secondary">
+                    {/* the corpus is markdown (notebook cells, docs), so render it as such */}
+                    <Markdown text={s.snippet.replace(/\n{3,}/g, "\n\n")} />
+                  </div>
+                </Reveal>
               ) : null}
             </li>
           ))}
         </ul>
-      ) : null}
+      </Reveal>
     </div>
   );
 }

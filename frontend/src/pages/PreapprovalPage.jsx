@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { NumberField, SelectField, SliderField, Toggle } from "../components/Fields.jsx";
 import EstimatePanel from "../components/EstimatePanel.jsx";
+import Reveal from "../components/Reveal.jsx";
 import useTween from "../lib/useTween.js";
 import DistributionChart from "../components/DistributionChart.jsx";
 import FactorChart from "../components/FactorChart.jsx";
@@ -459,23 +460,6 @@ export default function PreapprovalPage() {
       <aside className="hidden lg:block">
         <div className="sticky top-24">{panel("estimate-side")}</div>
       </aside>
-    </div>
-  );
-}
-
-/** Opens and closes its content by animating the height, so the form below glides. */
-function Reveal({ open, children }) {
-  return (
-    <div
-      className="grid"
-      style={{
-        gridTemplateRows: open ? "1fr" : "0fr",
-        opacity: open ? 1 : 0,
-        transition: `grid-template-rows 450ms ${EASE}, opacity 300ms ease`,
-      }}
-      inert={open ? undefined : ""}
-    >
-      <div className="min-h-0 overflow-hidden">{children}</div>
     </div>
   );
 }
