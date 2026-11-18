@@ -23,40 +23,58 @@ export default function EstimatePanel({ result, state, invalidLabel, compact = f
         Estimate
       </h2>
 
-      {/* The number leads, inside the gauge; the decision follows as a plain sentence. */}
-      <div className="ink-card px-5 pb-5 pt-4">
+      {/* The number leads, the decision sits opposite it, and a thin bar below shows where
+          the estimate falls against the cutoff. */}
+      <div className="ink-card px-6 pb-5 pt-5">
         <div className={`transition-opacity duration-300 ${dimmed ? "opacity-45" : ""}`}>
-          <Gauge prob={has ? prob ?? 0 : null} threshold={threshold} good={good} />
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              {has ? (
+                <span className="t-num font-display block animate-fade-up text-[3rem] leading-none tracking-[-0.03em] text-ink-primary">
+                  {((prob ?? 0) * 100).toFixed(1)}
+                  <span className="ml-0.5 text-[1.5rem] text-ink-secondary">%</span>
+                </span>
+              ) : (
+                <span className="skeleton block h-12 w-32 animate-shimmer rounded-full opacity-30" />
+              )}
+              <span className="mt-1.5 block text-[0.8125rem] leading-snug text-ink-muted">chance of an early missed payment</span>
+            </div>
+            {has && !dimmed ? (
+              <div key={`${result.decision}-${Boolean(result.policy_reason)}`} className="animate-fade-in text-right">
+                <Verdict good={good && !result.policy_reason} label={good && !result.policy_reason ? "Preapproved!" : "Declined"} />
+                {!result.policy_reason ? (
+                  <span className="mt-1 block text-[0.8125rem] text-ink-secondary">{result.risk_percentile - 1}% scored lower</span>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+          <Meter prob={has ? prob ?? 0 : null} threshold={threshold} good={good && !result?.policy_reason} />
         </div>
 
-        <p
-          key={`${dimmed ? state : "ok"}-${result?.decision}-${Boolean(result?.policy_reason)}`}
-          className="-mt-3 animate-fade-in text-center text-[0.9375rem] leading-relaxed text-ink-secondary"
-          aria-live="polite"
-        >
-          {state === "offline" ? (
-            "The model isn't responding. This is the last estimate."
-          ) : state === "invalid" ? (
-            <>
-              Fix <b className="font-[620] text-ink-primary">{invalidLabel}</b> to update the estimate.
-            </>
-          ) : !has ? (
-            "Scoring…"
-          ) : result.policy_reason ? (
-            <>
-              <Verdict good={false} label="Declined" />
-              <br />
-              On affordability: {result.policy_reason.charAt(0).toLowerCase() + result.policy_reason.slice(1)}
-            </>
-          ) : (
-            <>
-              <Verdict good={good} label={good ? "Preapproved!" : "Declined"} />
-              <br />
-              {good ? "Under" : "Over"} the {(threshold * 100).toFixed(1)}% cutoff. {result.risk_percentile - 1}% of real
-              applicants scored lower.
-            </>
-          )}
-        </p>
+        {state === "offline" || state === "invalid" || !has || result.policy_reason ? (
+          <p
+            key={`${dimmed ? state : "ok"}-${Boolean(result?.policy_reason)}`}
+            className="mt-4 animate-fade-in text-[0.875rem] leading-relaxed text-ink-secondary"
+            aria-live="polite"
+          >
+            {state === "offline" ? (
+              "The model isn't responding. This is the last estimate."
+            ) : state === "invalid" ? (
+              <>
+                Fix <b className="font-[620] text-ink-primary">{invalidLabel}</b> to update the estimate.
+              </>
+            ) : !has ? (
+              "Scoring…"
+            ) : (
+              <>On affordability: {result.policy_reason.charAt(0).toLowerCase() + result.policy_reason.slice(1)}</>
+            )}
+          </p>
+        ) : (
+          <p className="sr-only" aria-live="polite">
+            {good ? "Preapproved" : "Declined"}: {(result.default_probability * 100).toFixed(1)}% chance of a missed payment,{" "}
+            {good ? "under" : "over"} the {(threshold * 100).toFixed(1)}% cutoff.
+          </p>
+        )}
       </div>
 
       {has && (!compact || result.notes?.length) ? (
@@ -77,11 +95,11 @@ export default function EstimatePanel({ result, state, invalidLabel, compact = f
   );
 }
 
-/** The decision as a short headline in its colour, above the sentence that explains it. */
+/** The decision in its colour, opposite the number. */
 function Verdict({ good, label }) {
   return (
     <span
-      className="font-display mb-1 inline-block text-[1.375rem] font-[650] leading-tight tracking-[-0.02em] transition-colors duration-500"
+      className="font-display block text-[1.3rem] font-[650] leading-none tracking-[-0.02em] transition-colors duration-500"
       style={{ color: good ? "var(--good-text)" : "var(--critical-text)" }}
     >
       {label}
@@ -90,104 +108,49 @@ function Verdict({ good, label }) {
 }
 
 /**
- * A 270-degree dial from 0 to 30%, open at the bottom, drawn like an instrument: a faint
- * green-to-red track with a tick every 5%, the estimate's arc in sage or brick with a soft
- * glow and a bright bead at its tip, and a notch with a small label at the cutoff, so how
- * close it came reads at a glance. The scale is the same as the distribution chart's.
+ * A thin bar from 0 to 30%: a faint green-to-red track, filled to the estimate in sage or
+ * brick with a soft glow and a bright bead at its tip, and a notch at the cutoff with its
+ * label above. The scale is the same as the distribution chart's further down.
  */
-function Gauge({ prob, threshold, good }) {
-  const R = 78;
-  const C = 2 * Math.PI * R;
-  const SWEEP = 0.75;
-  const frac = (v) => Math.min(1, Math.max(0, v / RISK_SCALE_MAX));
-  const at = (v, r) => {
-    const a = ((135 + 270 * frac(v)) * Math.PI) / 180;
-    return [100 + r * Math.cos(a), 100 + r * Math.sin(a)];
-  };
+function Meter({ prob, threshold, good }) {
+  const pct = (v) => `${Math.min(1, Math.max(0, v / RISK_SCALE_MAX)) * 100}%`;
   const tone = good ? "var(--good)" : "var(--critical)";
-  const [t1x, t1y] = at(threshold, R - 11);
-  const [t2x, t2y] = at(threshold, R + 11);
-  const [lx, ly] = at(threshold, R + 25);
-  const [bx, by] = prob != null ? at(prob, R) : [0, 0];
-  const ticks = [];
-  for (let v = 0.05; v < RISK_SCALE_MAX; v += 0.05) ticks.push(v);
-
   return (
-    <div className="relative mx-auto w-[232px]">
-      {/* a soft pool of the decision's colour behind the dial */}
+    <div className="mt-8" aria-hidden>
       <div
-        aria-hidden
-        className="absolute inset-6 rounded-full blur-2xl transition-colors duration-700"
-        style={{ background: prob != null ? tone : "transparent", opacity: 0.22 }}
-      />
-      <svg viewBox="-12 -12 224 224" className="relative block h-auto w-full overflow-visible" aria-hidden>
-        <defs>
-          {/* left (low risk) to right (high); the counter-rotation undoes the ring's rotate(135) */}
-          <linearGradient id="gauge-track" x1="0" y1="0" x2="1" y2="0" gradientTransform="rotate(-135 0.5 0.5)">
-            <stop offset="0%" stopColor="var(--good)" stopOpacity="0.35" />
-            <stop offset="50%" stopColor="#c9a24a" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="var(--critical)" stopOpacity="0.4" />
-          </linearGradient>
-          <filter id="gauge-glow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="3.5" result="b" />
-            <feMerge>
-              <feMergeNode in="b" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
-        <circle cx="100" cy="100" r={R} fill="none" stroke="rgba(255,250,240,0.07)" strokeWidth="14" strokeLinecap="round" strokeDasharray={`${C * SWEEP} ${C}`} transform="rotate(135 100 100)" />
-        <circle cx="100" cy="100" r={R} fill="none" stroke="url(#gauge-track)" strokeWidth="14" strokeLinecap="round" strokeDasharray={`${C * SWEEP} ${C}`} transform="rotate(135 100 100)" />
-        {ticks.map((v) => {
-          const [x1, y1] = at(v, R - 13);
-          const [x2, y2] = at(v, R - 17);
-          return <line key={v} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--ink-muted)" strokeOpacity="0.5" strokeWidth="1.2" strokeLinecap="round" />;
-        })}
-
+        className="relative h-1.5 rounded-full"
+        style={{
+          background:
+            "linear-gradient(90deg, color-mix(in srgb, var(--good) 32%, transparent), color-mix(in srgb, #c9a24a 30%, transparent), color-mix(in srgb, var(--critical) 42%, transparent))",
+        }}
+      >
         {prob != null ? (
           <>
-            <circle
-              cx="100"
-              cy="100"
-              r={R}
-              fill="none"
-              stroke={tone}
-              strokeWidth="14"
-              strokeLinecap="round"
-              strokeDasharray={`${Math.max(0.001, C * SWEEP * frac(prob))} ${C}`}
-              transform="rotate(135 100 100)"
-              filter="url(#gauge-glow)"
-              className="animate-fade-in"
-              style={{ transition: "stroke 500ms ease" }}
+            <div
+              className="absolute inset-y-0 left-0 rounded-full transition-colors duration-500"
+              style={{ width: pct(prob), background: tone, boxShadow: `0 0 10px color-mix(in srgb, ${tone} 75%, transparent)` }}
             />
-            <circle cx={bx} cy={by} r="4.5" fill="#fffaf2" className="animate-fade-in" style={{ filter: "drop-shadow(0 0 4px rgba(255,250,240,0.7))" }} />
+            <div
+              className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 animate-fade-in rounded-full bg-[#fffaf2]"
+              style={{ left: pct(prob), boxShadow: "0 0 8px rgba(255, 250, 240, 0.8)" }}
+            />
           </>
         ) : null}
-
         {threshold ? (
           <>
-            <line x1={t1x} y1={t1y} x2={t2x} y2={t2y} stroke="var(--ink-primary)" strokeWidth="2.5" strokeLinecap="round" />
-            <text x={lx} y={ly} textAnchor={lx > 108 ? "start" : lx < 92 ? "end" : "middle"} dominantBaseline="middle" fontSize="10.5" fontWeight="600" fill="var(--ink-secondary)" letterSpacing="0.02em">
+            <div className="absolute -inset-y-[5px] w-[2px] -translate-x-1/2 rounded-full bg-[var(--ink-primary)]" style={{ left: pct(threshold) }} />
+            <span
+              className="absolute bottom-full mb-2.5 -translate-x-1/2 whitespace-nowrap text-[0.6875rem] text-ink-secondary"
+              style={{ left: pct(threshold) }}
+            >
               cutoff {(threshold * 100).toFixed(1)}%
-            </text>
+            </span>
           </>
         ) : null}
-        <text x={at(0, R)[0]} y={at(0, R)[1] + 24} textAnchor="middle" fontSize="10.5" fill="var(--ink-muted)">0%</text>
-        <text x={at(RISK_SCALE_MAX, R)[0]} y={at(RISK_SCALE_MAX, R)[1] + 24} textAnchor="middle" fontSize="10.5" fill="var(--ink-muted)">
-          {Math.round(RISK_SCALE_MAX * 100)}%+
-        </text>
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        {prob != null ? (
-          <span className="t-num font-display animate-fade-up text-[2.9rem] leading-none tracking-[-0.03em] text-ink-primary">
-            {(prob * 100).toFixed(1)}
-            <span className="ml-0.5 text-[1.5rem] text-ink-secondary">%</span>
-          </span>
-        ) : (
-          <span className="skeleton block h-11 w-28 animate-shimmer rounded-full opacity-30" />
-        )}
-        <span className="mt-2 max-w-[7.5rem] text-[0.75rem] leading-snug text-ink-muted">chance of an early missed payment</span>
+      </div>
+      <div className="mt-2 flex justify-between text-[0.6875rem] text-ink-muted">
+        <span>0%</span>
+        <span>{Math.round(RISK_SCALE_MAX * 100)}%+</span>
       </div>
     </div>
   );
