@@ -10,7 +10,7 @@ report is still 0.7976.
 
 That model reads the applicant's whole credit history. **The preapproval site serves a
 different one**: trained only on what a form can ask, and without sex or marital status,
-which US lenders may not use. It scores 0.7669 test AUC on form answers, where the
+which US lenders may not discriminate on. It scores 0.7669 test AUC on form answers, where the
 full-history model managed 0.749 (02_research.ipynb, section 3). That assumes the applicant
 enters bureau scores. With those left blank it scores 0.706 (03_train.ipynb, section 7),
 because the model is trained with the scores hidden on 75% of its training rows.
@@ -77,7 +77,9 @@ modeling/                 the model and everything that produces it
 data/                     the raw Kaggle competition files (10 CSVs, 2.5 GB, not in git)
 documents/                local only, not in git
   rag/                              extra notes the research guide indexes
+  sources/                          copies of the sources the paper cites
   other/                            personal paperwork, unrelated to the site
+paper/                    the write-up (LaTeX), local only until it is submitted
 Dockerfile, render.yaml   deployment
 ```
 
@@ -115,8 +117,8 @@ Everything personal on `/about` lives in one `PROFILE` object at the top of
 Three, in `modeling/`, run in order. `modeling/requirements.txt` lists the packages they
 need, at the versions the saved results came from.
 
-1. **`01_eda.ipynb`: exploring the data.** What the applications look like, the five
-   auxiliary tables aggregated to one row per applicant, and the numbers on the site's
+1. **`01_eda.ipynb`: exploring the data.** What the applications look like, the six
+   credit-history tables aggregated to one row per applicant, and the numbers on the site's
    findings page (written straight to `frontend/public/data/`).
 2. **`02_research.ipynb`: the models.** The first models (logistic regression, XGBoost,
    LightGBM, CatBoost and an MLP, with Optuna, SHAP, threshold tuning and calibration;
