@@ -120,7 +120,7 @@ function Findings({ S }) {
       >
         <CountUp value={lo / hi} caption="riskier in the lowest fifth than the highest" />
         <p>
-          Each applicant has up to three scores from credit bureaus. In the lowest fifth,{" "}
+          Each applicant has up to three credit scores from outside sources. In the lowest fifth,{" "}
           {oneIn(lo)} missed a payment. In the highest, {oneIn(hi)}.
         </p>
         <p className="t-small">Fifths by average score. Only {pct(S.ext_missing_rate, 2)} of applicants had none.</p>
@@ -214,7 +214,7 @@ function Findings({ S }) {
             <dt className="text-ink-muted">Applications</dt>
             <dd className="text-ink-primary">{S.n.toLocaleString()}, one row each</dd>
             <dt className="text-ink-muted">History tables</dt>
-            <dd className="text-ink-primary">5, covering bureau records, past loans and repayments</dd>
+            <dd className="text-ink-primary">6, covering bureau records, past loans and repayments</dd>
             <dt className="text-ink-muted">Size</dt>
             <dd className="text-ink-primary">2.5 GB of CSV across 10 files</dd>
             <dt className="text-ink-muted">Currency</dt>

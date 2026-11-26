@@ -107,13 +107,13 @@ only 8.4% are late at all, and most of that is 1 to 5 days. Fewer than 0.2% of f
 installments are more than 30 days late, far too few to produce an 8.07% target rate, so X
 is a matter of days rather than months.
 
-Most clients with TARGET = 1 repay in full. Someone ten days late on their second
-installment who then clears the whole balance counts as a 1. The model is therefore an
+The data do not say whether loans with TARGET = 1 were eventually repaid. Someone ten days
+late on their second installment who then clears the whole balance would still count as a 1. The model is therefore an
 early warning model, not a loss model: nothing in the dataset supports an estimate of
 money lost.
 """),
         ("The dataset", """
-307,511 historical loan applications in `application_train.csv`, plus five auxiliary
+307,511 historical loan applications in `application_train.csv`, plus six
 tables describing each client's credit history: `bureau.csv` and `bureau_balance.csv`
 (loans held at other institutions), `previous_application.csv` (prior applications to
 Home Credit), `POS_CASH_balance.csv`, `installments_payments.csv`, and
@@ -296,7 +296,7 @@ def feature_importances(top_n: int = 40) -> list[Document]:
     for i, r in enumerate(rows, 1):
         lines.append(f"| {i} | {r['feature']} | {float(r['gain']):,.0f} |")
     lines += ["",
-              "EXT_SOURCES_MEAN -- the average of the three external credit bureau scores --",
+              "EXT_SOURCES_MEAN -- the average of the three external scores (EXT_SOURCE_1-3) --",
               "is the single most important feature by a factor of two over anything else. The",
               "three raw EXT_SOURCE columns individually rank well below their own summary",
               "statistics: averaging three noisy, partially-missing scores produces a cleaner",

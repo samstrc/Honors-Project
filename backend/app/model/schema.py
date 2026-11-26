@@ -102,7 +102,7 @@ class LoanApplication(BaseModel):
     occupation: OccupationType | None = None
     years_employed: float | None = Field(None, ge=0, le=YEARS_EMPLOYED_MAX, description="Leave blank if unemployed/retired/student")
 
-    # --- optional: external credit bureau scores (0-1). A real system would pull these
+    # --- optional: the three external scores (EXT_SOURCE_1-3, 0-1), most likely from credit bureaus. A real system would pull these
     # from a bureau; here they are optional, for applicants who happen to know them. ---
     ext_score_1: float | None = Field(None, ge=0, le=1)
     ext_score_2: float | None = Field(None, ge=0, le=1)
