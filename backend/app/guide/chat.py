@@ -159,7 +159,7 @@ class Guide:
             return hits
         sims = [1.0 - float(score) for _, score in hits]
         floor = max(sims[0] * self.rel_floor, 0.08)
-        kept = [h for h, sim in zip(hits, sims) if sim >= floor]
+        kept = [h for h, sim in zip(hits, sims, strict=True) if sim >= floor]
         return kept if len(kept) >= 2 else hits[:2]
 
     # ------------------------------------------------------------------

@@ -347,7 +347,7 @@ def predict(app_data: LoanApplication):
         proba = float(model.predict_proba(X)[0, 1])
         top_factors, base_rate, n_contributing = explain_row(model, X)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Prediction failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {e}") from e
 
     policy_reason, notes = policy_and_notes(app_data)
     decision = "declined" if proba >= DEFAULT_THRESHOLD or policy_reason else "preapproved"
