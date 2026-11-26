@@ -12,7 +12,7 @@ Sources, roughly in order of how often they answer a question:
   1. Markdown cells from the three notebooks in `modeling/` -- the written narrative, already prose and already sectioned by heading.
   2. `modeling/results/*.json|csv` -- the numbers, rendered as readable tables rather
      than raw JSON, so a retrieved chunk reads like a results section.
-  3. Module docstrings from `modeling/features.py`, `modeling/history_features.py` and `backend/app/model/*.py` -- these carry the reasoning
+  3. Module docstrings from `modeling/features.py` and `backend/app/model/*.py` -- these carry the reasoning
      behind each decision, which is most of what the guide gets asked about.
   4. A hand-written project overview -- the framing no single file states outright.
   5. The research paper, `paper/main.pdf`, once `INDEX_PAPER` is switched on.
@@ -65,7 +65,7 @@ population of real applicants.
 
 The main finding is not the score. Two changes account for about 88% of the improvement,
 fixing a bug in early stopping and building better features, while hyperparameter search,
-cohort features and ensembling contributed 0.0017 between them despite using most of the
+peer-group features and ensembling contributed 0.0017 between them despite using most of the
 compute. Seed-bagging came out slightly negative.
 """),
         ("What kind of loans these are", """
@@ -140,7 +140,8 @@ median of 2,595,258, about 21 times larger. Had everything been normalised onto 
 unit those medians would be comparable. This also shows the dataset is one market in one
 currency rather than consumers pooled from several economies: `bureau.csv` is the only
 table with a currency column at all, and no table names a country. That matters for the
-cohort features, which compare an applicant's income against their cohort's average.
+peer-group features, which compare an applicant's income against the average for others
+like them.
 
 The unit does not affect the model: gradient-boosted trees split on comparisons, so
 rescaling every amount by a constant produces the same tree, and the strongest engineered
@@ -158,7 +159,7 @@ on this data. The honest figure to report is still 0.7976.
 
 Where the gain came from, as test-AUC deltas against the best rung so far: better
 features (+0.0110), fixing early stopping (+0.0080), letting LightGBM handle missing
-values natively (+0.0010), hyperparameter search (+0.0009), cohort features (+0.0005),
+values natively (+0.0010), hyperparameter search (+0.0009), peer-group features (+0.0005),
 and ensembling (+0.0003). Those sum to +0.0217, the whole gain from the first-model
 reproduction to the final blend.
 """),
@@ -239,7 +240,7 @@ def ablation_results() -> list[Document]:
         "A4k300_top300_features": "top 300 features by gain",
         "A4k600_top600_features": "top 600 features by gain",
         "A5_no_reweight": "removed scale_pos_weight entirely",
-        "A6_cohort_features": "added cohort z-scores and per-prior-loan installment statistics",
+        "A6_cohort_features": "added peer-group features (how far an applicant sits from their group's average) and per-prior-loan installment statistics",
         "A7_trial26_bestCV": "Optuna search at full data size, scored on AUC",
         "A8xgb_tuned_rank1": "XGBoost, tuned with Optuna",
         "ENS_xgb": "XGBoost with hand-picked parameters",
@@ -399,7 +400,7 @@ outside the model:
 The model is trained with LightGBM monotone constraints on every feature that rises with the
 bureau scores (the scores, their mean, minimum, maximum, weighted sum and product, the
 score-by-age and score-by-employment interactions, and the applicant's score relative to
-their cohort), so raising any score can never raise the prediction. The spread between the
+their peer group), so raising any score can never raise the prediction. The spread between the
 three scores was dropped from the model because it moves both ways as one score changes: left
 in, three identical scores (a spread of exactly zero, rare in the data but easy on a slider)
 raised the risk by up to 2 points. The constraint cost nothing measurable in AUC
@@ -433,7 +434,7 @@ model trained on the form's fields alone scores {form['auc']:.4f} on the same in
 ## Sex and marital status
 
 The US Equal Credit Opportunity Act and its Regulation B bar sex and marital status from
-credit decisions, so the served model is trained without them, and without the cohort
+credit decisions, so the served model is trained without them, and without the peer-group
 features built on sex. On the full-history model, leaving them out cost
 {full['full history']['auc'] - prot['auc']:.4f} AUC, about half the test set's standard
 error, and changed {fair['decisions_changed_by_dropping_protected']:.1%} of approve/decline
@@ -459,7 +460,7 @@ dataset's median applicant income (147,150 a month) maps onto $4,300 a month, wh
 someone entering dollars where an equivalent Home Credit applicant sits in the population.
 It is a calibration constant, not an exchange rate, and the page says so. The conversion is
 necessary because {n_cohort} of the model's features compare an applicant against their
-cohort's average, which only means anything if the applicant is on the same scale as the
+peer group's average, which only means anything if the applicant is on the same scale as the
 training data. Income is asked for as gross, monthly, before tax; the dataset states neither.
 
 It asks nothing the model cannot use, and nothing a lender may not use: no sex, no marital
@@ -479,7 +480,7 @@ def module_docstrings() -> list[Document]:
     gets asked about far more often than the code itself.
     """
     model_dir = os.path.join(HERE, "..", "model")
-    sources = [("modeling", os.path.join(MODELING, fn)) for fn in ("features.py", "history_features.py")] + [
+    sources = [("modeling", os.path.join(MODELING, fn)) for fn in ("features.py",)] + [
         ("model", os.path.join(model_dir, fn)) for fn in sorted(os.listdir(model_dir))
         if fn.endswith(".py") and not fn.startswith("_")]
     docs = []

@@ -87,13 +87,14 @@ def get_schema():
 
 
 @cache
-def get_cohorts():
-    """Group means/stds so a single applicant can be placed against their cohort.
+def get_peer_groups():
+    """Each peer group's averages and standard deviations, so a single applicant can be
+    compared with others like them (features.py, section 4).
 
-    Without them every cohort feature arrives missing. A missing file is not fatal: the
+    Without them every peer-group feature arrives missing. A missing file is not fatal: the
     features just stay NaN, which costs accuracy but still scores.
     """
-    return _read_json("_cohorts.json", {"numerics": [], "cohorts": {}})
+    return _read_json("_peer_groups.json", {"numerics": [], "groups": {}})
 
 
 @cache
@@ -112,19 +113,20 @@ def warm():
     get_model()
     get_schema()
     get_percentile_edges()
-    get_cohorts()
+    get_peer_groups()
 
 
-def add_cohort_features(row: dict, df: pd.DataFrame) -> pd.DataFrame:
-    """Return `df` with COH_*_MEAN and COH_*_Z added, for cohorts the form can resolve.
+def add_peer_group_features(row: dict, df: pd.DataFrame) -> pd.DataFrame:
+    """Return `df` with the peer-group features (COH_*_MEAN and COH_*_Z) added, for every
+    group the form's answers place the applicant in.
 
-    A cohort whose key the form does not collect (ORGANIZATION_TYPE, when the applicant
+    A group whose trait the form does not collect (ORGANIZATION_TYPE, when the applicant
     leaves it blank) is skipped and its features stay missing, which the model handles.
     The new columns are joined in one concat: inserting 128 one at a time fragments the
     frame and makes pandas warn on every request.
     """
     new: dict[str, float] = {}
-    for tag, spec in get_cohorts().get("cohorts", {}).items():
+    for tag, spec in get_peer_groups().get("groups", {}).items():
         vals = [row.get(k) for k in spec["keys"]]
         if any(v is None for v in vals):
             continue
@@ -154,7 +156,7 @@ def health():
         "model": MODEL_NAME,
         "threshold": DEFAULT_THRESHOLD,
         "n_features": len(schema["features"]),
-        "cohort_tables": len(get_cohorts().get("cohorts", {})),
+        "peer_group_tables": len(get_peer_groups().get("groups", {})),
         "test_auc": schema.get("test_auc"),
     }
 
@@ -201,7 +203,7 @@ def build_feature_row(app_data: LoanApplication) -> pd.DataFrame:
         raw["CC_COUNT"] = 1
 
     df = add_application_features(pd.DataFrame([raw]))
-    df = add_cohort_features(raw, df)
+    df = add_peer_group_features(raw, df)
     # Anything the model expects but we couldn't derive becomes NaN, and anything we
     # derived that the importance sweep dropped gets dropped.
     df = df.reindex(columns=schema["features"])
@@ -283,26 +285,26 @@ FEATURE_LABELS = {
     "CC_COUNT": "Credit card history",
 }
 
-# Cohort features (features.py) compare an applicant with others in the same group.
+# Peer-group features (features.py) compare an applicant with others in the same group.
 # COH_<group>_<value>_MEAN is the group's average; COH_<group>_<value>_Z is how far the
 # applicant sits from it.
-COHORT_GROUPS = {"ORG": "employer type", "OCC": "occupation", "EDU": "education",
+PEER_GROUP_NAMES = {"ORG": "employer type", "OCC": "occupation", "EDU": "education",
                  "INC": "income source"}
-COHORT_VALUES = {"EXT_SOURCES_MEAN": "bureau score", "AMT_INCOME_TOTAL": "income",
+PEER_GROUP_VALUES = {"EXT_SOURCES_MEAN": "bureau score", "AMT_INCOME_TOTAL": "income",
                  "AMT_CREDIT": "loan amount", "AMT_ANNUITY": "monthly payment",
                  "CREDIT_INCOME_RATIO": "loan vs. income", "ANNUITY_INCOME_RATIO": "payment vs. income",
                  "DAYS_EMPLOYED": "time employed", "DAYS_BIRTH": "age"}
 
 
-def _cohort_label(name: str) -> str | None:
+def _peer_group_label(name: str) -> str | None:
     body = name[len("COH_"):]
-    for code, group in sorted(COHORT_GROUPS.items(), key=lambda kv: -len(kv[0])):
+    for code, group in sorted(PEER_GROUP_NAMES.items(), key=lambda kv: -len(kv[0])):
         if not body.startswith(code + "_"):
             continue
         rest = body[len(code) + 1:]
         for suffix, template in (("_MEAN", "Average {v} in your {g} group"), ("_Z", "{V} compared with your {g} group")):
-            if rest.endswith(suffix) and rest[: -len(suffix)] in COHORT_VALUES:
-                v = COHORT_VALUES[rest[: -len(suffix)]]
+            if rest.endswith(suffix) and rest[: -len(suffix)] in PEER_GROUP_VALUES:
+                v = PEER_GROUP_VALUES[rest[: -len(suffix)]]
                 return template.format(v=v, V=v[0].upper() + v[1:], g=group)
     return None
 
@@ -311,7 +313,7 @@ def prettify(name: str) -> str:
     """Turn an internal feature name into something a loan officer can read."""
     if name in FEATURE_LABELS:
         return FEATURE_LABELS[name]
-    if name.startswith("COH_") and (label := _cohort_label(name)):
+    if name.startswith("COH_") and (label := _peer_group_label(name)):
         return label
     return name.replace("_", " ").capitalize()
 

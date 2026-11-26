@@ -2,7 +2,7 @@
 Feature engineering shared by the notebooks and the site's backend.
 
 The backend imports `add_application_features` to turn one form into one model input, and
-reads the cohort tables `export_cohort_tables` writes. The notebooks use the same functions,
+reads the peer-group tables `export_peer_group_tables` writes. The notebooks use the same functions,
 so the site can't quietly compute a feature differently from how the model learned it.
 
 The file reads top to bottom:
@@ -10,11 +10,12 @@ The file reads top to bottom:
   1. Paths and settings
   2. What a preapproval form can supply   FORM_INPUTS, PROTECTED, form_feature_columns
   3. Application features                 add_application_features
-  4. Cohort features                      cohort_features, export_cohort_tables
+  4. Peer-group features                  peer_group_features, export_peer_group_tables
   5. Split and loading                    train_mask, load_matrix
 
-The features built from the credit-history tables are in `history_features.py`. That module
-writes the two cached tables in `cache/` that `load_matrix` reads; the site never needs it.
+The features built from the credit-history tables are made in `01_eda.ipynb`, section 6,
+which saves the two cached tables in `cache/` that `load_matrix` reads. The site never needs
+them.
 """
 
 from __future__ import annotations
@@ -81,17 +82,18 @@ def form_feature_columns(columns, include_protected: bool = False) -> list[str]:
 
     Worked out from the formulas rather than listed by hand: every form input is set on a
     one-row frame, the application features are derived from it with the same code the
-    backend runs, and whatever comes out populated counts. Cohort features count when every
-    key of their cohort is a form input. So a new formula in `add_application_features`
-    joins the form model automatically if, and only if, a form can feed it.
+    backend runs, and whatever comes out populated counts. Peer-group features count when
+    every trait that defines the group is a form input. So a new formula in
+    `add_application_features` joins the form model automatically if, and only if, a form
+    can feed it.
     """
     inputs = FORM_INPUTS + (PROTECTED if include_protected else [])
     probe = pd.DataFrame([{c: 1.0 for c in inputs}])
     derived = add_application_features(probe)
     available = set(derived.columns[derived.notna().iloc[0].to_numpy()])
-    for keys, tag in COHORT_TAG.items():
+    for keys, tag in PEER_GROUP_TAG.items():
         if set(keys) <= set(inputs):
-            for col in COHORT_NUMERICS:
+            for col in PEER_GROUP_COLUMNS:
                 if col in available:
                     available |= {f"COH_{tag}_{col}_MEAN", f"COH_{tag}_{col}_Z"}
     return [c for c in columns if c in available]
@@ -187,25 +189,33 @@ def add_application_features(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # ==================================================================================
-# 4. Cohort features
+# 4. Peer-group features
 # ==================================================================================
-# Each cohort compares an applicant with others who share a trait: how far their income,
-# loan, bureau score and so on sit from their group's average.
+# A peer-group feature compares an applicant with other applicants who share a trait, such
+# as the same occupation. For each group and each value in PEER_GROUP_COLUMNS it adds two
+# features: the group's average, and how far the applicant sits from it in standard
+# deviations. For example, an income 1.2 standard deviations above the average for the
+# applicant's occupation.
 #
-# Hand-written tags so two cohorts can never share a name. Truncating the key names did
-# collide (NAME_EDUCATION_TYPE and NAME_INCOME_TYPE both became "NAME") and silently
-# dropped 16 features (02_research §2.9). A cohort without a tag fails loudly here.
-COHORT_TAG = {
+# The columns are named COH_<group>_<value>_MEAN and COH_<group>_<value>_Z. COH_ is short
+# for "cohort", the statistics word for such a group. The trained models know their
+# features by these names, so the prefix stays.
+#
+# The group tags are written by hand so two groups can never share a name. Shortening the
+# trait names instead once made NAME_EDUCATION_TYPE and NAME_INCOME_TYPE both "NAME" and
+# silently dropped 16 features (02_research §2.9).
+PEER_GROUP_TAG = {
     ("ORGANIZATION_TYPE",): "ORG",
     ("OCCUPATION_TYPE",): "OCC",
     ("NAME_EDUCATION_TYPE",): "EDU",
     ("NAME_INCOME_TYPE",): "INC",
     ("CODE_GENDER", "NAME_EDUCATION_TYPE"): "GENDER_EDU",
 }
-COHORTS = list(COHORT_TAG)
-assert len(set(COHORT_TAG.values())) == len(COHORT_TAG), "cohort tags must be unique"
+PEER_GROUPS = list(PEER_GROUP_TAG)
+assert len(set(PEER_GROUP_TAG.values())) == len(PEER_GROUP_TAG), "group tags must be unique"
 
-COHORT_NUMERICS = [
+# The values each applicant is compared on.
+PEER_GROUP_COLUMNS = [
     "EXT_SOURCES_MEAN",
     "AMT_INCOME_TOTAL",
     "AMT_CREDIT",
@@ -217,37 +227,35 @@ COHORT_NUMERICS = [
 ]
 
 
-def _cohort_stats(df: pd.DataFrame, fit_mask, cohorts=None):
-    """Yield (tag, keys, column, stats) for each cohort and numeric column in `df`.
+def _peer_group_stats(df: pd.DataFrame, fit_mask, groups=None):
+    """Yield (tag, keys, column, stats) for each peer group and value in `df`.
 
-    `stats` is the mean and standard deviation of the column within each group, estimated on
-    the training rows (`fit_mask`) only. Both `cohort_features` (training) and
-    `export_cohort_tables` (the website) read from here, so the site's lookup tables always
-    hold exactly the numbers the model was trained with.
+    `stats` holds the mean and standard deviation of the value within each group, worked
+    out on the training rows (`fit_mask`) only. Both `peer_group_features` (training) and
+    `export_peer_group_tables` (the website) use this, so the site's lookup tables hold
+    exactly the numbers the model was trained with.
     """
     fit = df.loc[fit_mask]
-    for keys in (COHORTS if cohorts is None else cohorts):
+    for keys in (PEER_GROUPS if groups is None else groups):
         keys = [k for k in keys if k in df.columns]
         if not keys:
             continue
         g = fit.groupby(keys, observed=True, dropna=False)
-        for col in COHORT_NUMERICS:
+        for col in PEER_GROUP_COLUMNS:
             if col in df.columns:
-                yield COHORT_TAG[tuple(keys)], keys, col, g[col].agg(["mean", "std"])
+                yield PEER_GROUP_TAG[tuple(keys)], keys, col, g[col].agg(["mean", "std"])
 
 
-def cohort_features(df: pd.DataFrame, fit_mask: np.ndarray) -> pd.DataFrame:
-    """COH_<tag>_<column>_MEAN (the group's average) and _Z (the applicant's distance from
-    it, in group standard deviations) for every row of `df`.
+def peer_group_features(df: pd.DataFrame, fit_mask: np.ndarray) -> pd.DataFrame:
+    """The peer-group features for every row of `df`: COH_<group>_<value>_MEAN (the
+    group's average) and _Z (the applicant's distance from it, in standard deviations).
 
-    The statistics come from training rows only. They use no target information, so pooling
-    would not leak the label -- but estimating them over train+test would still be
-    transductive, and a held-out test set is supposed to stand in for applicants the model
-    has never seen.
+    The averages come from the training rows only, so the test set stands in for applicants
+    the model has never seen.
     """
     out = pd.DataFrame(index=df.index)
-    group_of = {}  # each row's group, per cohort
-    for tag, keys, col, stats in _cohort_stats(df, fit_mask):
+    group_of = {}  # each row's group, per kind of group
+    for tag, keys, col, stats in _peer_group_stats(df, fit_mask):
         if tag not in group_of:
             group_of[tag] = pd.MultiIndex.from_frame(df[keys]) if len(keys) > 1 else pd.Index(df[keys[0]])
         mean = pd.Series(stats["mean"].reindex(group_of[tag]).values, index=df.index)
@@ -257,28 +265,29 @@ def cohort_features(df: pd.DataFrame, fit_mask: np.ndarray) -> pd.DataFrame:
     return out
 
 
-def export_cohort_tables(df: pd.DataFrame, fit_mask, path: str, cohorts=None) -> dict:
-    """Save the cohort means and standard deviations so the backend can rebuild these features.
+def export_peer_group_tables(df: pd.DataFrame, fit_mask, path: str, groups=None) -> dict:
+    """Save each group's averages and standard deviations so the backend can rebuild these
+    features.
 
-    The serving path has one applicant, not a population, so it cannot compute a group mean
-    on the fly; without these tables every cohort feature would arrive missing. `cohorts`
-    limits the export to the cohorts the served model uses (default: all of them).
+    The website scores one applicant at a time, so it can't work out a group average on the
+    spot; without these tables every peer-group feature would arrive missing. `groups`
+    limits the export to the groups the served model uses (default: all of them).
     """
-    out = {"numerics": list(COHORT_NUMERICS), "cohorts": {}}
-    for tag, keys, col, stats in _cohort_stats(df, fit_mask, cohorts):
-        groups = out["cohorts"].setdefault(tag, {"keys": keys, "stats": {}})["stats"]
+    out = {"numerics": list(PEER_GROUP_COLUMNS), "groups": {}}
+    for tag, keys, col, stats in _peer_group_stats(df, fit_mask, groups):
+        table = out["groups"].setdefault(tag, {"keys": keys, "stats": {}})["stats"]
         for idx, row in stats.iterrows():
-            # Multi-key cohorts are keyed on the joined values, matching the backend.
+            # Groups defined by two traits are keyed on the joined values, matching the backend.
             k = "||".join(str(v) for v in (idx if isinstance(idx, tuple) else (idx,)))
             if pd.isna(row["mean"]):
                 continue
-            groups.setdefault(k, {})[col] = [float(row["mean"]),
-                                             float(row["std"]) if pd.notna(row["std"]) else 0.0]
+            table.setdefault(k, {})[col] = [float(row["mean"]),
+                                            float(row["std"]) if pd.notna(row["std"]) else 0.0]
 
     with open(path, "w") as f:
         json.dump(out, f)
-    n = sum(len(c["stats"]) for c in out["cohorts"].values())
-    print(f"  wrote {path}: {len(out['cohorts'])} cohorts, {n} groups, "
+    n = sum(len(c["stats"]) for c in out["groups"].values())
+    print(f"  wrote {path}: {len(out['groups'])} kinds of group, {n} groups, "
           f"{os.path.getsize(path)/1e3:.0f} KB")
     return out
 
@@ -331,7 +340,7 @@ def load_matrix() -> tuple[pd.DataFrame, pd.Series]:
 
 
 def extra_columns() -> list[str]:
-    """Names of the cohort and per-loan features, read from the parquet schema (no data load)."""
+    """Names of the peer-group and per-loan features, read from the parquet schema (no data load)."""
     import pyarrow.parquet as pq
 
     names = pq.ParquetFile(EXTRA_PATH).schema_arrow.names

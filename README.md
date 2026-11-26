@@ -63,16 +63,15 @@ backend/                  one FastAPI app: the API, and the built site in produc
   requirements.txt
 
 modeling/                 the model and everything that produces it
-  01_eda.ipynb                      the data, and the numbers on the findings page
+  01_eda.ipynb                      the data, the numbers on the findings page, and the full research table
   02_research.ipynb                 first models, and what actually improved them
   03_train.ipynb                    search, train, evaluate, save the weights
   features.py                       the features a form can supply, shared by the notebooks and the backend
-  history_features.py               summarises the credit-history tables into the research table
   requirements.txt                  the notebooks' packages, pinned
   figures/                          every chart the write-up uses, saved by the notebooks
   models/                           the served model and its four sidecar files
   results/                          saved experiment results the notebooks read
-  cache/                            built feature matrices (not in git, rebuilt by 03_train)
+  cache/                            the research tables 01_eda builds (not in git)
 
 data/                     the raw Kaggle competition files (10 CSVs, 2.5 GB, not in git)
 documents/                local only, not in git
@@ -119,7 +118,10 @@ need, at the versions the saved results came from.
 
 1. **`01_eda.ipynb`: exploring the data.** What the applications look like, the six
    credit-history tables aggregated to one row per applicant, and the numbers on the site's
-   findings page (written straight to `frontend/public/data/`).
+   findings page (written straight to `frontend/public/data/`). Section 6 then builds the
+   full research table the later models use, about 1,570 features, step by step: one
+   short section per history table, explaining what it adds and why. It takes a minute or
+   two and is saved to `cache/`.
 2. **`02_research.ipynb`: the models.** The first models (logistic regression, XGBoost,
    LightGBM, CatBoost and an MLP, with Optuna, SHAP, threshold tuning and calibration;
    0.7802), then the controlled study of what actually improved them (0.7976), then
@@ -135,17 +137,15 @@ need, at the versions the saved results came from.
    the only place in the project that writes a model file: run it, restart the backend, and
    the site serves the new model.
 
-All of the analysis and modelling happens in these notebooks. The two feature modules are the
-only code outside them: `features.py` because the site's backend has to compute the same
-features the model was trained on, and `history_features.py` because building the research
-table from the raw history tables is too long for a notebook cell. Everything else outside
-`modeling/` is the website.
+All of the analysis and modelling happens in these notebooks. The only code outside them is
+`features.py`, because the site's backend has to compute the same features the model was
+trained on. Everything else outside `modeling/` is the website.
 
 ## What the project found
 
 About 88% of the improvement came from two changes: fixing a bug where early stopping cut
 training off at a quarter of the trees the model needed (+0.0080), and building better
-features (+0.0110). That is +0.0190 of the +0.0217 total. Hyperparameter search, cohort
+features (+0.0110). That is +0.0190 of the +0.0217 total. Hyperparameter search, peer-group
 features and ensembling added 0.0017 between them while using most of the compute, and
 seed-bagging came out slightly negative.
 

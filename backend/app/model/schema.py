@@ -2,7 +2,7 @@
 
 `LoanApplication` is the form: the fields an applicant can answer about themselves,
 with the credit-bureau ones optional. Everything the model needs beyond this is either
-derived from these fields or looked up from the cohort tables.
+derived from these fields or looked up from the peer-group tables.
 """
 
 from enum import Enum
