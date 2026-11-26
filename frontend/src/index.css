@@ -119,10 +119,6 @@ body {
   outline-offset: 3px;
   filter: drop-shadow(0 0 7px color-mix(in srgb, var(--focus) 45%, transparent));
 }
-.focus-ring:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
 
 ::-webkit-scrollbar {
   width: 10px;
@@ -588,16 +584,6 @@ html.dark .guide-bubble {
   }
   .btn-primary:hover {
     background: color-mix(in srgb, var(--ink-primary) 86%, var(--surface));
-  }
-  .btn-secondary {
-    background: var(--card);
-    box-shadow: var(--shadow-raised);
-    color: var(--ink-primary);
-  }
-
-  /* A section opens with a thin rule instead of sitting in a box. */
-  .section-rule {
-    border-top: 1px solid var(--rule);
   }
 }
 
