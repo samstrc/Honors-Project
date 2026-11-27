@@ -330,7 +330,7 @@ def deployment_notes() -> list[Document]:
     hiding_table = "\n".join(
         f"| {r['hidden share']:.0%} | {r['CV AUC']:.4f} | {r['CV AUC, scores blank']:.4f} |"
         for r in load(os.path.join(RESULTS, "score_hiding.json")) or [])
-    n_cohort = sum(c.startswith("COH_") for c in schema["features"])
+    n_peer_group = sum(c.startswith("COH_") for c in schema["features"])
 
     text = f"""
 # The deployed system
@@ -459,7 +459,7 @@ currency is anonymised, so there is no exchange rate to look up; the constant is
 dataset's median applicant income (147,150 a month) maps onto $4,300 a month, which places
 someone entering dollars where an equivalent Home Credit applicant sits in the population.
 It is a calibration constant, not an exchange rate, and the page says so. The conversion is
-necessary because {n_cohort} of the model's features compare an applicant against their
+necessary because {n_peer_group} of the model's features compare an applicant against their
 peer group's average, which only means anything if the applicant is on the same scale as the
 training data. Income is asked for as gross, monthly, before tax; the dataset states neither.
 
