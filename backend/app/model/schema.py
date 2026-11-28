@@ -11,8 +11,8 @@ from pydantic import BaseModel, Field, model_validator
 
 # Sanity limits, in the dataset's units (the site's calibration is ~34.22 units per US
 # dollar). They reject inputs that cannot describe a real application, not inputs that
-# are merely unusual. The point: a tree model saturates outside its training range --
-# anything past the last learned split lands in the same leaf -- so $5 a month and $500
+# are merely unusual. That matters because a tree model goes flat outside its training range.
+# Anything past the last learned split lands in the same leaf, so $5 a month and $500
 # a month score identically, as do $500k and $5M. A form should keep to the range the
 # model was trained on (the web app's does, with tighter limits and an explanation);
 # the API itself only refuses nonsense. Figures from application_train.csv:

@@ -8,9 +8,10 @@ import { CheckIcon } from "../components/icons.jsx";
 import { loadSession, saveSession } from "../lib/storage.js";
 
 const STARTERS = [
-  "Which parts of this project are AI?",
-  "How does the tool decide to approve or decline?",
-  "What kind of loans are these?",
+  // Each follows from something the home page or the tool says, so a visitor would think to ask it.
+  "What actually helped the model improve?",
+  "How accurate is it if I leave my credit scores blank?",
+  "Is the model fair if it never sees sex or marital status?",
   "How good is the model at catching missed payments?",
 ];
 
@@ -265,7 +266,7 @@ export default function GuidePage() {
   useEffect(() => () => abortRef.current?.abort(), []);
 
   // Arrived from the preapproval result with a question about that score: put it in the
-  // box (not sent -- the person can still edit it) and clear the router state so a
+  // box (not sent, so the person can still edit it) and clear the router state so a
   // refresh doesn't re-fill it.
   useEffect(() => {
     const prefill = location.state?.prefill;
@@ -367,9 +368,10 @@ export default function GuidePage() {
       <div>
         <h1 className="t-h1">Research guide</h1>
         <p className="t-body mt-3">
-          Ask how the model was built or what the study found. Anything about the project
-          comes from its own notebooks, results and code, with sources, and the guide says so
-          when they don't cover something. It can also explain the ideas behind it.
+          Ask how the model was built or what the study found. Its answers about the project come
+          from the notebooks where the analysis was done (the .ipynb files it cites), the saved
+          results and the site's code, and it says so when they don't cover something. It can
+          also explain the ideas behind it.
         </p>
         <h2 className="t-h3 mt-8">Try asking</h2>
         <ul className="mt-3 flex flex-col items-start gap-2">
@@ -384,7 +386,7 @@ export default function GuidePage() {
       </div>
 
       <div className="guide-shell relative flex h-[min(76vh,780px)] min-h-[460px] flex-col">
-        {/* drifting pools of colour for the glass to refract */}
+        {/* drifting pools of color for the glass to refract */}
         <div aria-hidden className="guide-aurora">
           <span />
           <span />

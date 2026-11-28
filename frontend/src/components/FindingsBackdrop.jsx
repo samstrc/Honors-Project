@@ -1,7 +1,7 @@
 /**
  * The painting behind the top of the findings page: Kano Tsunenobu's "Mount Fuji in the
- * Autumn" (ink and light colour on silk, The Walters Art Museum, via Unsplash), credited in
- * the footer. It fades into the page colour before the first chart, so it never sits behind
+ * Autumn" (ink and light color on silk, The Walters Art Museum, via Unsplash), credited in
+ * the footer. It fades into the page color before the first chart, so it never sits behind
  * the data. Decoration only; it ignores the pointer and screen readers.
  *
  * App.jsx draws it outside the page wrapper, because the wrapper is briefly transformed

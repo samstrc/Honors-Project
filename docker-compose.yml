@@ -1,0 +1,21 @@
+# The whole site in one container, built from the root Dockerfile: the API, the research
+# guide and the built frontend, all on one port.
+#
+#   docker compose up --build
+#
+# then open http://localhost:8000. The research guide needs OPENAI_API_KEY in backend/.env
+# (copy backend/.env.example). Without it the findings and preapproval pages still work.
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: backend/.env
+        required: false
+    # The image has Python but not curl, so the check uses Python to call the health route.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s

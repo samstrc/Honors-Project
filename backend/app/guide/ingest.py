@@ -38,7 +38,7 @@ def main():
     print("Building corpus:")
     docs = build_corpus()
     if not docs:
-        raise SystemExit("Corpus is empty -- nothing to index.")
+        raise SystemExit("The corpus is empty, so there is nothing to index.")
 
     # Split on paragraph and sentence boundaries before falling back to characters, so a
     # chunk boundary lands between ideas rather than mid-word.
@@ -69,11 +69,11 @@ def main():
         documents=chunks,
         embedding=embeddings,
         persist_directory=DB_DIR,
-        # Cosine distance, since OpenAI embeddings are normalised and cosine is what the
+        # Cosine distance, since OpenAI embeddings are normalized and cosine is what the
         # model was trained against; Chroma defaults to L2, which is not the same ranking.
         collection_metadata={"hnsw:space": "cosine"},
     )
-    print(f"done -- vector store at {DB_DIR}")
+    print(f"done: vector store at {DB_DIR}")
 
 
 if __name__ == "__main__":

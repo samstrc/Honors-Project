@@ -37,8 +37,8 @@ export function HelpTip({ text }) {
 }
 
 // No `step` on purpose. The browser treats step as a validation rule, not just a spinner
-// increment, so `step={100}` rejected any income that wasn't a round hundred -- including
-// the site's own presets -- with a native "nearest valid values are…" popup. Range checks
+// increment, so `step={100}` rejected any income that wasn't a round hundred (including
+// the site's own presets) with a native "nearest valid values are…" popup. Range checks
 // live in validate() (lib/application.js) so the message can say what's actually wrong.
 export function NumberField({ id, label, help, error, value, onChange, min, max, prefix, suffix, disabled, placeholder, stepper }) {
   // Which way the last − or + went, and a counter so the same nudge twice still replays.
@@ -130,7 +130,8 @@ function StepButton({ label, onClick, disabled, children }) {
 const CHEVRON_BG =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='%2371685b' d='M5.5 7.5l4.5 4.5 4.5-4.5'/%3E%3C/svg%3E\")";
 
-export function SelectField({ id, label, help, value, onChange, options, placeholder }) {
+// `labels` renames an option for display only; the value sent to the API stays the same.
+export function SelectField({ id, label, help, value, onChange, options, labels = {}, placeholder }) {
   return (
     <Field label={label} help={help} htmlFor={id}>
       {() => (
@@ -144,7 +145,7 @@ export function SelectField({ id, label, help, value, onChange, options, placeho
           {placeholder ? <option value="">{placeholder}</option> : null}
           {options.map((o) => (
             <option key={o} value={o}>
-              {o}
+              {labels[o] ?? o}
             </option>
           ))}
         </select>
@@ -185,7 +186,7 @@ export function SliderField({ id, label, help, value, onChange, min, max, step, 
 }
 
 /**
- * An on/off switch: a checkbox underneath, so it keeps the native keyboard behaviour and
+ * An on/off switch: a checkbox underneath, so it keeps the native keyboard behavior and
  * is announced as a switch. `description` is the quieter line under the label.
  */
 export function Toggle({ label, description, checked, onChange }) {

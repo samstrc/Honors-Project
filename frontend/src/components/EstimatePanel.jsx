@@ -43,7 +43,7 @@ export default function EstimatePanel({ result, state, invalidLabel, compact = f
               <div key={`${result.decision}-${Boolean(result.policy_reason)}`} className="animate-fade-in text-right">
                 <Verdict good={good && !result.policy_reason} label={good && !result.policy_reason ? "Preapproved!" : "Declined"} />
                 {!result.policy_reason ? (
-                  <span className="mt-1 block text-[0.8125rem] text-ink-secondary">{result.risk_percentile - 1}% scored lower</span>
+                  <span className="mt-1 block text-[0.8125rem] text-ink-secondary">{result.risk_percentile - 1}% of real applicants scored lower</span>
                 ) : null}
               </div>
             ) : null}
@@ -95,7 +95,7 @@ export default function EstimatePanel({ result, state, invalidLabel, compact = f
   );
 }
 
-/** The decision in its colour, opposite the number. */
+/** The decision in its color, opposite the number. */
 function Verdict({ good, label }) {
   return (
     <span

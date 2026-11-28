@@ -57,9 +57,9 @@ EPS = 1e-6
 # ==================================================================================
 # The raw columns a preapproval applicant can answer about themselves: the application's
 # amounts, age, household, education, employment, the three bureau scores (optional) and
-# their credit card utilization (optional). Everything else in the data -- building and
-# region statistics, document flags, the bureau and prior-loan history -- is something a
-# lender looks up or never sees, so a form-only model cannot use it.
+# their credit card utilization (optional). Everything else in the data (building and
+# region statistics, document flags, the bureau and prior-loan history) is something a
+# lender looks up or never sees, so a form-only model can't use it.
 # backend/app/model/schema.py is the form itself and maps its fields onto these columns.
 FORM_INPUTS = [
     "AMT_INCOME_TOTAL", "AMT_CREDIT", "AMT_ANNUITY", "AMT_GOODS_PRICE",
@@ -120,15 +120,15 @@ def add_application_features(df: pd.DataFrame) -> pd.DataFrame:
     Kept as its own function so the serving path (`backend/app/model/service.py`) can build a
     feature row with this code rather than a reimplementation. A second copy of these
     formulas would be free to drift from the one the model was trained on, and the
-    resulting skew is close to undetectable from the outside -- the site would just
+    resulting skew is close to undetectable from the outside. The site would just
     quietly get worse.
 
     Operates on whatever columns are present; callers reindex to the model's schema
     afterwards, so a partially-populated row is fine.
     """
     def col(name):
-        """Column if present, otherwise an all-NaN column. Lets a partially-populated
-        serving row flow through the same formulas as a full training frame."""
+        """The column if it exists, otherwise an all-NaN column, so a half-filled form row
+        goes through the same formulas as the full training table."""
         if name in df.columns:
             return df[name]
         return pd.Series(np.nan, index=df.index, dtype="float32")
@@ -162,12 +162,12 @@ def add_application_features(df: pd.DataFrame) -> pd.DataFrame:
     df["EXT_SOURCES_STD"] = ext.std(axis=1)
     df["EXT_SOURCES_PROD"] = ext.iloc[:, 0] * ext.iloc[:, 1] * ext.iloc[:, 2]
     df["EXT_SOURCES_NAN_COUNT"] = ext.isna().sum(axis=1).astype("int8")
-    # Weighted blend -- EXT_SOURCE_3 and _2 have the most coverage and signal. A missing
+    # Weighted blend. EXT_SOURCE_3 and _2 have the most coverage and signal. A missing
     # score counts as zero here, so a form with no scores gets 0 rather than NaN.
     df["EXT_SOURCES_WEIGHTED"] = (
         ext.iloc[:, 0].fillna(0) * 2 + ext.iloc[:, 1].fillna(0) * 3 + ext.iloc[:, 2].fillna(0) * 4
     )
-    # Interactions with age -- a low score at 25 means something different than at 60.
+    # Interactions with age, since a low score at 25 means something different than at 60.
     for i in range(1, 4):
         df[f"EXT_SOURCE_{i}_X_AGE"] = ext.iloc[:, i - 1] * (-col("DAYS_BIRTH") / 365.0)
         df[f"EXT_SOURCE_{i}_X_EMPLOYED"] = ext.iloc[:, i - 1] * (-col("DAYS_EMPLOYED") / 365.0)
@@ -177,7 +177,7 @@ def add_application_features(df: pd.DataFrame) -> pd.DataFrame:
     df["DOCUMENT_COUNT"] = df[doc_cols].sum(axis=1).astype("int8") if doc_cols else np.nan
     df["DOCUMENT_KURTOSIS"] = df[doc_cols].kurtosis(axis=1) if doc_cols else np.nan
 
-    # --- credit bureau enquiry volume ---
+    # --- how often the credit bureau was asked about the applicant ---
     req_cols = [c for c in df.columns if c.startswith("AMT_REQ_CREDIT_BUREAU_")]
     df["BUREAU_REQ_TOTAL"] = df[req_cols].sum(axis=1) if req_cols else np.nan
 

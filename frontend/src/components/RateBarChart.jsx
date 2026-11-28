@@ -2,12 +2,12 @@ import { useTooltip, TipTitle, TipRow } from "./Tooltip.jsx";
 import { useInView, EASE } from "../lib/motion.js";
 
 /**
- * Horizontal bars of a rate per band, in the order given, each labelled at its end.
+ * Horizontal bars of a rate per band, in the order given, each labeled at its end.
  *
- * Two colours from the palette, one meaning: a band whose rate is above the overall
+ * Two colors from the palette, one meaning: a band whose rate is above the overall
  * average is drawn in clay brown, everything at or below it in sage. The dashed rule is
  * that average, and the value at the end of each bar says the same thing in numbers, so
- * colour is never the only cue. `max` lets several charts share one scale so they
+ * color is never the only cue. `max` lets several charts share one scale so they
  * compare. With `pctKey="pct"` the bars are shares, not rates, and are all sage.
  *
  * On a phone, a chart with long labels (wider than 6rem) puts each label on its own line

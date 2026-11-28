@@ -25,6 +25,7 @@ import {
   INCOME_TYPE_OPTIONS,
   OCCUPATION_OPTIONS,
   ORGANIZATION_OPTIONS,
+  ORGANIZATION_LABELS,
   SCORE_MIN,
   SCORE_MAX,
   extToScore,
@@ -35,7 +36,7 @@ import {
 // The examples, by the short name on their button and the one line said about them.
 const PRESET_INFO = {
   "Strong applicant": { short: "Strong", blurb: "Well paid, small loan, 15 years in the job, good scores." },
-  "Typical applicant": { short: "Typical", blurb: "A real applicant with typical answers. No bureau scores." },
+  "Typical applicant": { short: "Typical", blurb: "A real applicant with typical answers. No credit bureau scores." },
   "High-risk applicant": { short: "High-risk", blurb: "21, unemployed, borrowing a lot, card over its limit." },
 };
 // An example is active only while the whole form still matches it, optional fields included.
@@ -138,8 +139,8 @@ export default function PreapprovalPage() {
       <div className="min-w-0">
         <h1 className="t-h1">Check a preapproval</h1>
         <p className="t-lead mt-3">
-          See how likely an applicant is to miss one of their first payments. The model learned
-          from 307,511 real loans, and the estimate updates as you type.
+          See how likely an applicant is to miss one of their first payments. The model was built
+          from 307,511 real loan applications, and the estimate updates as you type.
         </p>
 
         {/* examples */}
@@ -303,6 +304,7 @@ export default function PreapprovalPage() {
               value={form.organizationType}
               onChange={set("organizationType")}
               options={ORGANIZATION_OPTIONS}
+              labels={ORGANIZATION_LABELS}
               placeholder="Not specified"
             />
           </FormSection>
@@ -310,14 +312,14 @@ export default function PreapprovalPage() {
           <FormSection title="Credit bureau" note="Optional">
             <div className="sm:col-span-2">
               <p className="t-body max-w-[62ch] pl-1 text-[0.9375rem]">
-                A lender would pull these for you. Without them the model scores the rest of the
-                form, and the estimate gets much rougher.
+                Three credit scores from outside sources, which a lender would pull for you. Without
+                them the model scores the rest of the form, and the estimate gets much rougher.
               </p>
               <div className="raised mt-4 divide-y divide-[var(--border)] px-5">
                 <div className="py-4">
                   <Toggle
                     label="I know my credit bureau scores"
-                    description="Three scores from different bureaus"
+                    description="Each from 300 to 850; higher is safer"
                     checked={form.useExtScores}
                     onChange={set("useExtScores")}
                   />
@@ -337,8 +339,9 @@ export default function PreapprovalPage() {
                         />
                       ))}
                       <p className="t-small sm:col-span-3">
-                        On the usual {SCORE_MIN} to {SCORE_MAX} scale. Higher is safer: the top quarter missed
-                        payments about 3.5% of the time, the bottom quarter about 14%.
+                        Shown on the familiar {SCORE_MIN} to {SCORE_MAX} scale; the data's own scores run
+                        from 0 to 1 and are converted. Higher is safer: the top quarter missed payments
+                        about 3.5% of the time, the bottom quarter about 14%.
                       </p>
                     </div>
                   </Reveal>
@@ -382,8 +385,10 @@ export default function PreapprovalPage() {
               <div className="raised mt-2 p-5 sm:p-6">
                 <h3 className="t-h3">Compared with {distribution.n.toLocaleString()} real applicants</h3>
                 <p className="t-body mt-1 max-w-[62ch] text-[0.9375rem]">
-                  Most people score low. The cutoff turns away {Math.round(DECLINE_RATE * 100)}% of
-                  applicants and catches {Math.round(CAUGHT_RATE * 100)}% of the missed payments.
+                  Real applicants the model never saw while it was learning. Most of them score low.
+                  Anyone above the cutoff, {(result.threshold * 100).toFixed(1)}%, is declined. With their
+                  bureau scores on file, that turns away {Math.round(DECLINE_RATE * 100)}% of these
+                  applicants and catches {Math.round(CAUGHT_RATE * 100)}% of their missed payments.
                 </p>
                 <div className="mt-4">
                   <DistributionChart
@@ -400,8 +405,11 @@ export default function PreapprovalPage() {
             <div className="raised mt-2 p-5 sm:p-6">
               <h3 className="t-h3">What pushed it up or down</h3>
               <p className="t-body mt-1 max-w-[62ch] text-[0.9375rem]">
-                The {result.top_factors.length} biggest of {result.n_contributing || result.top_factors.length}{" "}
-                effects, as SHAP values on the model's log-odds scale.
+                Each bar is how much one answer pushed this estimate up or down, compared with a typical
+                applicant. These are the {result.top_factors.length} biggest of{" "}
+                {result.n_contributing || result.top_factors.length}. The numbers are SHAP values on the
+                model's internal scale (log-odds), so compare them with each other rather than reading
+                them as percentage points.
               </p>
               <div className="mt-4">
                 <FactorChart factors={result.top_factors} />
@@ -422,25 +430,26 @@ export default function PreapprovalPage() {
           </h2>
           <div className="t-body mt-3 max-w-[62ch] space-y-3">
             <p>
-              A LightGBM model that uses only what this form asks ({FORM_N_FEATURES} features). It never
-              sees sex or marital status, which US lenders can't use. Its average prediction,{" "}
+              A LightGBM model, made of many small decision trees that each correct the ones before,
+              that uses only what this form asks. It works out {FORM_N_FEATURES} inputs, called features,
+              from your answers. It never sees sex or marital status, which US lenders can't use. Its average prediction,{" "}
               {(FORM_MEAN_PREDICTED * 100).toFixed(1)}%, matches the real rate of{" "}
               {(BASE_RATE * 100).toFixed(1)}%, so the percentages mean what they say.
             </p>
             <p>
               A missed payment here means one of the first few came in more than a few days late.
-              Most of those borrowers still paid the loan off.
+              The data don't say whether those borrowers paid the loan off in the end.
             </p>
           </div>
           </div>
           <div className="raised px-5 py-4">
           <table className="w-full text-left text-[0.9375rem]">
             <caption className="t-small pb-2 text-left">
-              How well each version tells risky applicants from safe ones (test AUC; 0.5 is a coin flip)
+              How well each version ranks applicants who missed a payment above those who didn't, on applicants it never trained on (AUC: 0.5 is a coin flip, 1.0 is perfect)
             </caption>
             <tbody>
               {[
-                ["Research model, with full credit history", MODEL_AUC],
+                ["Research model, which also sees full credit history", MODEL_AUC],
                 ["This tool, with bureau scores", MODEL_AUC_FORM],
                 ["This tool, without bureau scores", MODEL_AUC_FORM_BLANK],
               ].map(([label, auc]) => (

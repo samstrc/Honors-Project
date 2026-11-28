@@ -16,7 +16,7 @@ export const BASE_RATE = 0.0807;
 export const DECLINE_RATE = 0.165;
 export const CAUGHT_RATE = 0.479;
 
-// The dataset's currency is anonymised, so there is no exchange rate to look up. This is a
+// The dataset's currency is anonymized, so there is no exchange rate to look up. This is a
 // calibration constant, not an exchange rate: it maps the dataset's median applicant
 // income (147,150 a month) onto $4,300 a month, so someone entering dollars lands in the
 // same part of the population an equivalent Home Credit applicant would.
@@ -24,7 +24,7 @@ export const TYPICAL_INCOME_USD = 4300.0;
 export const DATASET_MEDIAN_INCOME = 147150.0;
 export const USD_TO_UNITS = DATASET_MEDIAN_INCOME / TYPICAL_INCOME_USD; // ~34.2209
 
-// The dataset's three bureau scores are anonymised and normalised to 0-1. The form shows
+// The dataset's three bureau scores are anonymized and normalized to 0-1. The form shows
 // them on the 300-850 scale most people know from their own credit report and converts
 // linearly, so a slider position means the same thing either way; the model still
 // receives the 0-1 value it was trained on.
@@ -201,3 +201,7 @@ export const ORGANIZATION_OPTIONS = [
   "Transport: type 1", "Transport: type 2", "Transport: type 3", "Transport: type 4",
   "University", "XNA",
 ];
+
+// "XNA" is the dataset's code for no employer. In the training data it belongs only to
+// people with no current job (almost all pensioners), so the form says that instead.
+export const ORGANIZATION_LABELS = { XNA: "None (retired or not working)" };

@@ -51,7 +51,7 @@ def get_guide():
             _guide = Guide()
         except SystemExit as e:
             _guide_error = str(e)
-        except Exception as e:  # missing deps, bad key, etc. -- report, don't crash
+        except Exception as e:  # missing packages, a bad key and so on: report it, don't crash
             _guide_error = f"{type(e).__name__}: {e}"
     return _guide
 
@@ -91,7 +91,7 @@ def answer_stream(req: ChatRequest):
         try:
             for event in guide.answer_stream(req.message, history):
                 yield f"data: {json.dumps(event)}\n\n"
-        except Exception as e:  # noqa: BLE001 -- report it to the client, don't 500
+        except Exception as e:  # noqa: BLE001  (send the error to the page instead of a 500)
             yield f"data: {json.dumps({'type': 'error', 'detail': f'{type(e).__name__}: {e}'})}\n\n"
 
     return StreamingResponse(

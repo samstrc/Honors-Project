@@ -1,11 +1,11 @@
 import { useInView, EASE } from "../lib/motion.js";
 
 /**
- * Diverging bars of SHAP contributions, in log-odds, largest first. Colour encodes
- * direction (raises vs. lowers risk); the words say it too, so colour is never the only
+ * Diverging bars of SHAP contributions, in log-odds, largest first. Color encodes
+ * direction (raises vs. lowers risk); the words say it too, so color is never the only
  * cue. On a phone the label sits above its bar instead of beside it.
  *
- * Bars grow out from the centre line when the chart first comes into view, and resize
+ * Bars grow out from the center line when the chart first comes into view, and resize
  * smoothly as the form changes; a reason that newly makes the list fades in.
  */
 export default function FactorChart({ factors }) {

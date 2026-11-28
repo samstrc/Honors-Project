@@ -4,7 +4,7 @@ import { useInView, EASE } from "../lib/motion.js";
  * "N in 100": a 10x10 grid of applicants with the first `count` marked. The plainest way
  * to make a base rate feel like people rather than a percentage.
  *
- * On first view the grid fades in row by row, then the marked dots colour in one at a
+ * On first view the grid fades in row by row, then the marked dots color in one at a
  * time, so the eye lands on the population first and the exception second. On a phone the
  * caption sits beside the grid rather than under it.
  */

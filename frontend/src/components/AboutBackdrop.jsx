@@ -1,10 +1,10 @@
 import { useEffect, useRef } from "react";
 
 /**
- * The colour behind the About page: the research guide's drifting pools of the palette,
+ * The color behind the About page: the research guide's drifting pools of the palette,
  * spread across the whole window and turned down, so every section on the page reads as
  * glass over it. It is fixed to the window, but each pool also shifts with how far down the
- * page you are, at its own rate and in its own direction, so the colours slide past each
+ * page you are, at its own rate and in its own direction, so the colors slide past each
  * other as you scroll instead of sitting still behind moving text.
  *
  * The scroll position goes in as one CSS variable (--about-scroll, 0 at the top and 1 at the

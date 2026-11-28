@@ -9,12 +9,13 @@ dropped before it reaches the splitter.
 
 Sources, roughly in order of how often they answer a question:
 
-  1. Markdown cells from the three notebooks in `modeling/` -- the written narrative, already prose and already sectioned by heading.
-  2. `modeling/results/*.json|csv` -- the numbers, rendered as readable tables rather
-     than raw JSON, so a retrieved chunk reads like a results section.
-  3. Module docstrings from `modeling/features.py` and `backend/app/model/*.py` -- these carry the reasoning
-     behind each decision, which is most of what the guide gets asked about.
-  4. A hand-written project overview -- the framing no single file states outright.
+  1. The markdown cells of the three notebooks in `modeling/`. They are already prose and
+     already split up by heading.
+  2. `modeling/results/*.json|csv`, the numbers, written out as tables rather than raw
+     JSON so a retrieved chunk reads like a results section.
+  3. The module docstrings of `modeling/features.py` and `backend/app/model/*.py`, which
+     explain the reasoning behind each decision. That is most of what people ask about.
+  4. A hand-written overview of the project, for the framing no single file states.
   5. The research paper, `paper/main.pdf`, once `INDEX_PAPER` is switched on.
   6. Anything dropped in `documents/rag/` (.pdf, .md, .txt). Nothing else needs to change
      to pick it up; other file types are skipped, and the ingest says so.
@@ -43,74 +44,76 @@ def project_overview() -> list[Document]:
 
     Deliberately several short documents rather than one long one. A 2,400-character
     overview gets cut in half by the splitter, so a broad question like "what is this
-    project" retrieves half the framing plus whatever else scored nearby -- which is how
-    a general question ends up answered with feature-engineering detail. Each piece below
+    project" retrieves half the framing plus whatever else scored nearby, and a general
+    question ends up answered with feature-engineering detail. Each piece below
     stands on its own and stays under the chunk size, so it is retrieved whole.
     """
     parts = [
         ("What this project is", """
-This is an undergraduate honors research project by Sam Strickler on the Home Credit
+This is an undergraduate honors research project by Sam Strickler, built on the Home Credit
 Default Risk dataset from Kaggle.
 
-It does two things: builds a model that predicts whether a loan applicant will fail to
-repay, and serves that prediction through a preapproval tool someone can actually use.
+It does two things. It builds a model that predicts whether a loan applicant will miss one
+of their first payments, and it serves that prediction through a preapproval tool people can
+actually use.
 
-The work is in three notebooks. 01_eda explores the data. 02_research fits a first round
-of models, which reached 0.7802 test AUC, then re-runs the problem as a controlled study,
-one change at a time, and reaches 0.7976 with the applicant's full credit history. It ends
-by asking what a preapproval form can honestly deliver. 03_train trains the model the site
-serves on the form's fields alone, without sex or marital status, which a FastAPI backend
-and a React site use to score an application, explain it, and place it against the
-population of real applicants.
+The work is in three notebooks. 01_eda explores the data. 02_research fits a first round of
+models, which reached 0.7802 test AUC, then reruns the problem as a controlled study, one
+change at a time, and reaches 0.7976 with the applicant's full credit history. It ends by
+asking what a preapproval form can really deliver. 03_train trains the model the site
+serves, on the form's fields alone and without sex or marital status. A FastAPI backend and
+a React site use that model to score an application, explain the score, and show where it
+falls among real applicants.
 
-The main finding is not the score. Two changes account for about 88% of the improvement,
-fixing a bug in early stopping and building better features, while hyperparameter search,
-peer-group features and ensembling contributed 0.0017 between them despite using most of the
-compute. Seed-bagging came out slightly negative.
+The main finding isn't the score. Two changes account for about 88% of the improvement:
+fixing a bug in early stopping, and building better features. Hyperparameter search,
+peer-group features and blending added 0.0017 between them, even though they used most of
+the computing time. Averaging copies of the model trained with different random seeds
+came out slightly negative.
 """),
         ("What kind of loans these are", """
-"Home Credit" is the lender's name, not the product. Home Credit is a consumer finance
-company founded in 1997 (part of PPF Group), operating across Central/Eastern Europe and
-Asia. These are not mortgages or home loans. Its three products are point-of-sale loans,
-multipurpose cash loans, and revolving credit, and the data bears that out.
+Home Credit is the lender's name, not the product. It is a consumer finance company founded
+in 1997 (part of PPF Group) that operates in Central and Eastern Europe and Asia. These are
+not mortgages or home loans. Its three products are point-of-sale loans, cash loans and
+revolving credit, and the data bears that out.
 
-Contract types in `application_train` are Cash loans 90.5% and Revolving loans 9.5%; there
-is no mortgage category. The largest product portfolio in `previous_application` is POS
-(point-of-sale) at 53.2% of applications with a recorded portfolio. Of the loans that
-financed goods: mobile phones 31.2%, consumer electronics 16.9%, computers 14.7%,
-audio/video 13.8%, furniture 7.5%. The originating retailers are consumer electronics shops
-(48.9%) and phone shops (33.9%). Cash loans are for repairs
-(34.1%), urgent needs (12.1%), a used car (4.1%), medicine (3.1%).
+In `application_train`, 90.5% of contracts are cash loans and 9.5% revolving loans. There
+is no mortgage category. In `previous_application`, the largest portfolio is point-of-sale,
+at 53.2% of the applications that record one. Of the loans that paid for goods, 31.2% were
+mobile phones, 16.9% consumer electronics, 14.7% computers, 13.8% audio and video, and 7.5%
+furniture. They were mostly sold through electronics shops (48.9%) and phone shops (33.9%).
+Cash loans went to repairs (34.1%), urgent needs (12.1%), a used car (4.1%) and medicine
+(3.1%).
 
-The median loan term is 12 months: 36 at the 90th percentile, 84 at the longest. A
-mortgage runs 180-360 months.
+The median loan runs 12 months, the 90th percentile 36, and the longest 84. A mortgage runs
+180 to 360 months.
 
-Home Credit's business targets customers with thin or no credit files, which is why the
-dataset ships three external bureau scores and five tables of alternative history. That
-population is also where the model is weakest: on the 14.2% of test clients with no bureau
-record at all it scores 0.780 AUC, against 0.799 on clients who have a record, even though
-the thin-file group defaults more often (10.2% vs 7.7%). The people this lender exists to
-serve are the ones it predicts least well.
+Home Credit aims at customers with thin or no credit files, which is why the dataset comes
+with three outside credit scores and six tables of credit history. Those customers are also
+where the model is weakest. The 14.2% of test applicants with no bureau record miss payments
+more often (10.2% against 7.7%), and the served model ranks them less well (0.745 AUC against
+0.770 for everyone else). The people this lender exists to serve are the ones it predicts
+least well.
 """),
         ("What TARGET actually means", """
 The dataset defines the target as: "client with payment difficulties: he/she had late
 payment more than X days on at least one of the first Y installments of the loan in our
 sample".
 
-So "default" throughout this project means an early missed payment, not that the loan was
-written off or charged off. That is a lower bar than the everyday sense of the word. The
+So "default" in this project means an early missed payment, not a loan that was written
+off. That is a lower bar than the everyday meaning of the word. The
 positive rate is 8.07%, or 24,825 of 307,511 applicants.
 
-Home Credit redacted the X and Y, but the payment data narrows X down. Across the 13.6
+Home Credit didn't publish X and Y, but the payment data narrows X down. Across the 13.6
 million scheduled payments on prior loans, 68.4% arrive early and 23.1% on the due date;
 only 8.4% are late at all, and most of that is 1 to 5 days. Fewer than 0.2% of first
 installments are more than 30 days late, far too few to produce an 8.07% target rate, so X
 is a matter of days rather than months.
 
-The data do not say whether loans with TARGET = 1 were eventually repaid. Someone ten days
-late on their second installment who then clears the whole balance would still count as a 1. The model is therefore an
-early warning model, not a loss model: nothing in the dataset supports an estimate of
-money lost.
+The data don't say whether loans with TARGET = 1 were repaid in the end. Someone ten days
+late on their second installment who then pays off the whole balance still counts as a 1.
+So this is an early-warning model, not a loss model, and nothing in the dataset supports an
+estimate of money lost.
 """),
         ("The dataset", """
 307,511 historical loan applications in `application_train.csv`, plus six
@@ -130,13 +133,13 @@ is monthly, versus an impossible 203% of monthly income if it is annual. So the 
 applicant borrows about 3.3 months of income over roughly 20 payments: ordinary
 consumer credit, not the enormous loan the raw figure suggests.
 
-Monetary amounts are in an anonymised currency unit. `bureau.csv` carries a
+Monetary amounts are in an anonymized currency unit. `bureau.csv` carries a
 CREDIT_CURRENCY column whose values are literally "currency 1" through "currency 4", and
 no file names a real currency.
 
-The names were withheld, not the values converted. Currency 1 covers 99.918% of the 1.7
+The names were hidden, but the values weren't converted. Currency 1 covers 99.918% of the 1.7
 million prior loans with a median amount of 125,224, while currency 2 covers 0.071% with a
-median of 2,595,258, about 21 times larger. Had everything been normalised onto a common
+median of 2,595,258, about 21 times larger. Had everything been normalized onto a common
 unit those medians would be comparable. This also shows the dataset is one market in one
 currency rather than consumers pooled from several economies: `bureau.csv` is the only
 table with a currency column at all, and no table names a country. That matters for the
@@ -155,9 +158,9 @@ features are dimensionless ratios in which the unit cancels.
 
 The stated target was 0.80 and it was not reached. The shortfall of 0.0024 is smaller
 than the test set's own standard error of 0.0039, so 0.7976 and 0.800 can't be told apart
-on this data. The honest figure to report is still 0.7976.
+on this data, but 0.7976 is the figure to report.
 
-Where the gain came from, as test-AUC deltas against the best rung so far: better
+Where the gain came from, as the gain in test AUC over the best result before each step: better
 features (+0.0110), fixing early stopping (+0.0080), letting LightGBM handle missing
 values natively (+0.0010), hyperparameter search (+0.0009), peer-group features (+0.0005),
 and ensembling (+0.0003). Those sum to +0.0217, the whole gain from the first-model
@@ -174,11 +177,10 @@ reproduction to the final blend.
 def notebook_sections(path: str) -> list[Document]:
     """Markdown cells from the notebook, grouped under their nearest heading.
 
-    Headings are detected line-by-line rather than only at the start of a cell. A cell
-    that opens with a `---` rule or a paragraph before its heading is common, and
-    matching only at position 0 files that whole cell under the previous
-    heading -- which mislabels the chunk and makes the citation point at the wrong
-    section. That is worse than no citation, so the scan looks at every line.
+    Headings are found line by line, not only at the start of a cell. Plenty of cells open
+    with a `---` rule or a paragraph before their heading, and matching only at the start
+    would file the whole cell under the previous heading. The citation would then point at
+    the wrong section. That is worse than no citation, so the scan looks at every line.
 
     Code cells and outputs are skipped: outputs are mostly base64 PNGs and progress
     bars, which would dominate the corpus by volume while answering nothing.
@@ -249,12 +251,12 @@ def ablation_results() -> list[Document]:
         "thinfile_app_only": "model trained only on the 98 application-level features",
     }
 
-    lines = ["# Ablation ladder: measured results",
+    lines = ["# The controlled study: measured results",
              "",
-             "Every row is 5-fold cross-validated inside the 80% training split. The held-out",
-             "test set (61,502 rows, 4,965 defaults) is read once per configuration. Its AUC",
-             "standard error is 0.0039, so test differences below roughly 0.008 are not",
-             "resolvable and all decisions were made on cross-validation.",
+             "Every row is scored with 5-fold cross-validation on the 80% training split. The",
+             "test set (61,502 rows, 4,965 missed payments) is read once per setup. Its AUC has",
+             "a standard error of 0.0039, so test differences under about 0.008 can't be told",
+             "apart, and every decision was made on cross-validation instead.",
              "",
              "| run | what changed | CV AUC | test AUC | mean trees |",
              "|---|---|---|---|---|"]
@@ -277,7 +279,7 @@ def ablation_results() -> list[Document]:
 
     return [Document(page_content="\n".join(lines),
                      metadata={"source": "results/ablation.json", "kind": "results",
-                               "section": "Ablation ladder: measured results"})]
+                               "section": "The controlled study: measured results"})]
 
 
 def feature_importances(top_n: int = 40) -> list[Document]:
@@ -297,11 +299,10 @@ def feature_importances(top_n: int = 40) -> list[Document]:
     for i, r in enumerate(rows, 1):
         lines.append(f"| {i} | {r['feature']} | {float(r['gain']):,.0f} |")
     lines += ["",
-              "EXT_SOURCES_MEAN -- the average of the three external scores (EXT_SOURCE_1-3) --",
-              "is the single most important feature by a factor of two over anything else. The",
-              "three raw EXT_SOURCE columns individually rank well below their own summary",
-              "statistics: averaging three noisy, partially-missing scores produces a cleaner",
-              "signal than any one of them."]
+              "EXT_SOURCES_MEAN, the average of the three bureau scores (EXT_SOURCE_1 to 3), is",
+              "the most important feature by a factor of two. Each raw score ranks well below",
+              "the summaries of all three, because averaging three noisy, partly missing scores",
+              "gives a cleaner signal than any one of them."]
     return [Document(page_content="\n".join(lines),
                      metadata={"source": "results/importances.csv", "kind": "results",
                                "section": "Most important features in the final model"})]
@@ -312,7 +313,7 @@ def deployment_notes() -> list[Document]:
     """What the served system actually does.
 
     Added after a test question ("what threshold does the API use?") came back unanswered:
-    the value lives in a model artefact and in function-level comments, neither of which
+    the value lives in a model artifact and in function-level comments, neither of which
     the corpus reached. Every figure is read from a file the notebooks write (the model's
     schema and threshold, results/final_metrics.json, results/fairness_and_form.json,
     results/form_field_sensitivity.csv), so the guide cannot quote a number the deployed
@@ -335,7 +336,7 @@ def deployment_notes() -> list[Document]:
     text = f"""
 # The deployed system
 
-The API (`backend/app/model/service.py`, FastAPI) serves **{MODEL_NAME}**: a LightGBM model
+The API (`backend/app/model/service.py`, FastAPI) serves {MODEL_NAME}, a LightGBM model
 over {len(schema['features'])} features, every one of them something a preapproval form can
 supply, built by 03_train.ipynb. Test AUC {schema.get('test_auc', float('nan')):.4f}, average
 precision {schema.get('test_avg_precision', float('nan')):.4f}, {schema.get('n_estimators', 0):,}
@@ -351,9 +352,9 @@ realistic one for the website.
 
 Almost every applicant in the data had a bureau score (only 0.06% had none), so a model
 trained on them as they are leans on the scores and has never learned to score without
-them. 03_train.ipynb (section 4) therefore hides the scores, and every feature built from
-them, on a random share of the training rows, so the model learns both cases. A blank form
-reaches the model as missing scores, exactly like those hidden rows. The share was chosen by
+them. So 03_train.ipynb (section 4) hides the scores, and every feature built from them, on
+a random share of the training rows, and the model learns both cases. A blank form reaches
+the model as missing scores, just like those hidden rows. The share was chosen by
 cross-validation with a rule set in advance: the best blank-score AUC among shares costing
 the scores-given AUC no more than 0.002. It came out at
 {schema.get('scores_hidden_share', float('nan')):.0%}. Before this change, the model was
@@ -364,31 +365,30 @@ median scores; it scored 0.668 test AUC with the scores blank.
 |---|---|---|
 {hiding_table}
 
-This is not the 0.7976 model of the research study. That one reads the applicant's whole
-credit history, which a preapproval form cannot supply; the served model is trained on the
-form's fields alone, which is what makes it honest about what a form can deliver.
+This is not the 0.7976 model from the research study. That one reads the applicant's whole
+credit history, which a preapproval form can't supply. The served model is trained on the
+form's fields alone, so its numbers are honest about what a form can deliver.
 
 ## The decision threshold
 
-The cutoff is **{thresh['threshold']:.4f}** -- above it an application is declined, below it
-preapproved. It is the F1-optimal point computed on **out-of-fold predictions**, not on
-the test set: a deployment threshold is a decision, and the test split had already been
-spent on reporting. Using the test set to pick it would quietly turn the held-out set
-into a tuning set. The default 0.5 the first models started with is arbitrary at an 8.07% base
-rate.
+The cutoff is {thresh['threshold']:.4f}. Above it an application is declined, and below it
+preapproved. It is the point with the best F1, found on out-of-fold predictions rather than
+the test set, because picking it on the test set would quietly turn the test set into a
+tuning set. The default of 0.5 that the first models started with means little when only
+8.07% of applicants miss a payment.
 
 ## Rules on top of the model
 
-Two behaviours of the raw model made no sense for a lending tool, so the API handles them
-outside the model:
+Two things the raw model does make no sense for a lending tool, so the API handles them
+outside the model.
 
-- **Affordability.** An application whose monthly payment is more than 40% of monthly
+- Affordability. An application whose monthly payment is more than 40% of monthly
   income is declined whatever its score. The model cannot enforce this itself: applicants
   paying 40-50% of income missed early payments at 8.6%, barely above the 8.1% average,
   because Home Credit had already turned away those who could not pay. 40% is a policy
   line, not something learned. For scale, about 2.6% of the real applicants in the data
   paid more than 40% of their income, and Home Credit had approved all of them.
-- **Unemployed applicants and students.** The form leaves their job length blank, and in
+- Unemployed applicants and students. The form leaves their job length blank, and in
   training a blank job length almost always meant a pensioner (55,352 of 55,374), a
   low-risk group. So the model scores them as safer than employed applicants, although
   the 22 unemployed applicants in the data missed payments 36% of the time. With 22
@@ -406,11 +406,12 @@ in, three identical scores (a spread of exactly zero, rare in the data but easy 
 raised the risk by up to 2 points. The constraint cost nothing measurable in AUC
 (03_train.ipynb, section 3).
 
-## No calibration wrapper
+## No calibration step
 
-The first models needed `CalibratedClassifierCV` with isotonic regression because `scale_pos_weight`
-inflated raw probabilities roughly threefold. The ablation showed that reweighting bought
-no AUC at all -- it only distorted the probability scale -- so it was dropped. The served
+The first models needed a calibration step (isotonic regression) because class weighting
+(`scale_pos_weight`) made their probabilities about three times too high. The controlled
+study showed the weighting added no AUC at all and only distorted the probabilities, so it
+was dropped. The served
 model predicts {final.get('mean_predicted', float('nan')):.2%} on average against a true base
 rate of {final.get('base_rate', float('nan')):.2%}, straight out of the model.
 """
@@ -455,7 +456,7 @@ reports the same check for the served model.
 ## The form
 
 The form collects amounts in US dollars and converts them before scoring. The dataset's
-currency is anonymised, so there is no exchange rate to look up; the constant is set so the
+currency is anonymized, so there is no exchange rate to look up; the constant is set so the
 dataset's median applicant income (147,150 a month) maps onto $4,300 a month, which places
 someone entering dollars where an equivalent Home Credit applicant sits in the population.
 It is a calibration constant, not an exchange rate, and the page says so. The conversion is
@@ -468,7 +469,7 @@ status, and no living situation, contract type, car or realty ownership, none of
 model reads. {levers}
 """
     return [Document(page_content=text.strip(),
-                     metadata={"source": "backend/app/model/service.py + model artefacts",
+                     metadata={"source": "backend/app/model/service.py + model artifacts",
                                "kind": "deployment", "section": "The deployed system"})]
 
 
@@ -476,8 +477,8 @@ model reads. {levers}
 def module_docstrings() -> list[Document]:
     """Module-level docstrings from the feature code and the served model.
 
-    These carry the reasoning behind each methodological choice -- which is what a guide
-    gets asked about far more often than the code itself.
+    They explain the reasoning behind each choice, which people ask about far more often
+    than the code itself.
     """
     model_dir = os.path.join(HERE, "..", "model")
     sources = [("modeling", os.path.join(MODELING, fn)) for fn in ("features.py",)] + [

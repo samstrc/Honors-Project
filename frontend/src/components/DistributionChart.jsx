@@ -4,7 +4,7 @@ import { useInView, EASE } from "../lib/motion.js";
 
 /**
  * Histogram of the held-out applicants' scores, with this application and the cutoff
- * marked as full-height rules. A coloured bar can't mark one applicant when most of the
+ * marked as full-height rules. A colored bar can't mark one applicant when most of the
  * population sits in the first few bins, so a rule that spans the plot reads the same
  * wherever it falls.
  *

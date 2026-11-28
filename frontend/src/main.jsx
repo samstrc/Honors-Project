@@ -4,9 +4,8 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App.jsx";
 import "./index.css";
 
-// Dark mode is a user preference for a project the person will revisit, not conversation
-// UI, so it's fine to persist it -- default to system preference, remember an explicit
-// override.
+// Remember the reader's light or dark choice between visits. Until they pick one, follow
+// the system setting.
 let stored = null;
 try {
   stored = localStorage.getItem("theme");
